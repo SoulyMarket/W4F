@@ -6,6 +6,7 @@ from app.api.routes import (
     auth,
     douars,
     health,
+    projects,
     reports,
     scoring,
     territories,
@@ -40,3 +41,4 @@ app.include_router(douars.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
 app.include_router(scoring.router, prefix="/api/v1")
 app.include_router(validations.router, prefix="/api/v1")
+app.include_router(projects.router, prefix="/api/v1")

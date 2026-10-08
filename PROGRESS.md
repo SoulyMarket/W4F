@@ -310,7 +310,23 @@ for the full spec and section 9 for the build order this follows.
       tightening later); `rejected` → no notification at all, since
       section 5's trigger list doesn't list one for it. 9 new tests, all
       passing. 143 tests total.
-- [ ] 1.9 Projects — not started.
+- [x] 1.9 Projects — `POST /reports/{id}/project` (manager-only,
+      territory-scoped; 409 unless the report is `validated` — reuses
+      the `errors.report_not_validated` i18n key defined back in step
+      1.1, unused until now), `GET /projects` (territory-scoped, status
+      filter), `GET /projects/{id}` (with update history), `PATCH
+      /projects/{id}`, `POST /projects/{id}/updates` (status transitions
+      gated by `PROJECT_STATUS_TRANSITIONS` from `app/models/enums.py`
+      — written back in step 1.2, exercised for the first time here:
+      409 on any transition not in that map, confirmed for both an
+      invalid forward jump (`new`→`approved`, skipping `in_study`) and
+      a terminal state (`completed`→anything)). Converting a report
+      writes two audit rows (project `create`, report `status_change`
+      to `converted_to_project`) and notifies moqaddem + all managers
+      (`project_created`); a status-changing update notifies the same
+      audience with `project_status_changed`, or `project_completed`
+      specifically when the new status is `completed`. 9 new tests, all
+      passing first try. 152 tests total.
 - [ ] 1.10 Dashboard + map + media + notifications — not started.
 
 Phase 2 (Android), Phase 3 (Web), Phase 4 (AI) — not started.
