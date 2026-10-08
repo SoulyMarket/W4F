@@ -217,7 +217,20 @@ for the full spec and section 9 for the build order this follows.
       `new_value` capture — audit so far only has login/logout/
       change-password, which don't have a real "before" state to diff;
       1.5's user CRUD is the first natural place for that.
-- [ ] 1.5 Admin endpoints — not started.
+- [x] 1.5 Admin endpoints — `POST/GET /users`, `GET/PATCH /users/{id}`,
+      `POST /users/{id}/deactivate` (also revokes all their refresh
+      tokens — a deactivated account shouldn't keep a live session),
+      `POST /users/{id}/reset-password` (generates a random temporary
+      password server-side and returns it once, rather than letting the
+      admin choose/know the user's real password — also revokes active
+      sessions), `PUT /users/{id}/territories` (full replace, not merge),
+      `GET/POST /territories`, `PATCH /territories/{id}`, `GET /audit`
+      (filters: actor_id, entity_type, action, date_from/date_to;
+      paginated). All admin-only. 22 new tests, all passing first try
+      against the real Postgres instance — including the `old_value`/
+      `new_value` audit example deferred from 1.4 (user update, user
+      deactivate, user territory reassignment all now have one).
+      113 tests total, 1 skipped (still the PostGIS-blocked report test).
 - [ ] 1.6 Douars and reports (read side) — not started.
 - [x] 1.7 Scoring — `compute_priority` implemented as a pure function in
       `backend/app/services/scoring.py`, 29 unit tests covering every
