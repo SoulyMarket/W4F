@@ -120,11 +120,6 @@ def test_user_territory_composite_pk_prevents_duplicates(db_session):
         db_session.flush()
 
 
-@pytest.mark.skip(
-    reason="douars/reports include the (deferred) PostGIS 'location' column in "
-    "every INSERT, even as NULL — blocked until the postgis migration runs "
-    "locally. See PROGRESS.md."
-)
 def test_report_status_defaults_to_submitted(db_session):
     import uuid
 

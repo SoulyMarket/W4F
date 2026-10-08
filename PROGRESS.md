@@ -14,14 +14,15 @@ for the full spec and section 9 for the build order this follows.
   `docker compose up`. The committed `docker-compose.yml` / `Dockerfile`
   still target Docker for any environment where it works (CI, another
   machine) — they're not being abandoned, just not exercised locally here.
-- **PostGIS is not yet installed** on the native PostgreSQL 16 instance.
-  I won't download/run a PostGIS installer myself outside of a vetted
-  package manager (winget has no PostGIS package). The official path is
-  Stack Builder, already installed at
-  `Start Menu → PostgreSQL 16 → Application Stack Builder` — pick
-  "PostGIS Bundle" for PostgreSQL 16 x64. Until that's done, any test
-  that needs `geography` columns or spatial queries is blocked locally
-  (code is still written correctly against the spec).
+- **PostGIS**: installed via Application Stack Builder (PostGIS 3.6.2) —
+  **done**. One extra step was needed afterward: the `w4f` role doesn't
+  have `CREATE EXTENSION` privilege (expected — it's not a superuser),
+  so `CREATE EXTENSION postgis` had to run once per database as the
+  `postgres` superuser before `alembic upgrade head` could proceed; after
+  that, `w4f` uses postgis freely with no special privileges needed.
+  Both `w4f` and `w4f_test` are now fully migrated (all 3 revisions) and
+  verified — see the ruling below about the GIST-index double-creation
+  bug this surfaced.
 - **Postgres credentials**: the winget silent install set a random,
   unknown `postgres` superuser password, and I won't weaken local auth
   (pg_hba.conf) myself — that's a system/security-settings change my
@@ -36,6 +37,32 @@ for the full spec and section 9 for the build order this follows.
 
 ## Decisions / rulings
 
+- **GeoAlchemy2 double-creates spatial indexes if you also create them
+  manually.** The postgis migration's `op.add_column(douars, Column(
+  "location", Geography(...)))` kept failing with
+  `relation "idx_douars_location" already exists` — but only through
+  Alembic/SQLAlchemy; the identical raw SQL run directly via `psql`
+  worked with no error. Root cause: `Geography(...)` defaults to
+  `spatial_index=True`, and GeoAlchemy2's Alembic integration hooks
+  `op.add_column`/`op.drop_column` to automatically create/drop the GIST
+  index itself — my migration's explicit `op.create_index(...)` right
+  after was racing that same automatic creation. Fixed by deleting the
+  manual `op.create_index`/`op.drop_index` calls entirely and trusting
+  GeoAlchemy2 to manage the index — confirmed afterward via `\d douars`
+  that `idx_douars_location` exists correctly as a GIST index. Found by
+  isolating the exact same SQL outside the ORM/migration layer (worked
+  fine), which pointed straight at something ORM-side doing extra work
+  rather than a real Postgres-level naming collision.
+- The `w4f` database role needs `CREATE EXTENSION` run once per database
+  by a superuser (`postgres`) before `alembic upgrade head` can proceed
+  past the postgis migration — a non-superuser app role can use postgis
+  freely afterward, it just can't install the extension itself. This is
+  normal Postgres behavior, not a W4F-specific workaround; noted here
+  only because `docker-compose.yml`'s `postgis/postgis` image handles
+  this automatically on container init (that image's entrypoint already
+  runs `CREATE EXTENSION` as its own superuser), so this manual step is
+  purely an artifact of the native-Postgres dev setup, not something a
+  Docker-based deployment needs to replicate.
 - FastAPI resolved to version 0.143.0 (pinned only `>=0.115` in
   `pyproject.toml`), which turned out to have substantially reworked
   routing internals: `app.routes` no longer holds a flat list of
@@ -168,20 +195,16 @@ for the full spec and section 9 for the build order this follows.
       run. `app/core/security.py` (password hashing, JWT, refresh
       tokens) also done here, ahead of 1.3, since it's pure logic needed
       by several later steps and has no DB dependency.
-- [~] 1.2 Database — code complete, partially verified. All 16 tables from
-      section 4 (incl. `project_media`) as typed SQLAlchemy 2.x models in
-      `backend/app/models/`; 3 migrations (initial schema / postgis
-      geography columns / audit_log append-only trigger — see rulings
-      above for why split this way); `backend/app/seed.py` written per
-      spec (idempotent, looks up by natural key before insert) but not
-      yet run — it creates douars and reports, both blocked on PostGIS.
-      `alembic upgrade e7ddb5e5e606` verified against both `w4f` and
-      `w4f_test`; 7 model tests pass (users, territories, user_territories,
-      enum round-trips, uniqueness/FK constraints) against the real
-      Postgres instance. 1 test skipped (report creation — needs
-      PostGIS). Still pending once PostGIS lands: run the remaining 2
-      migrations, run seed.py, un-skip the report test, add
-      douar/report-specific tests.
+- [x] 1.2 Database — all 16 tables from section 4 (incl. `project_media`)
+      as typed SQLAlchemy 2.x models in `backend/app/models/`; all 3
+      migrations applied cleanly to both `w4f` and `w4f_test`
+      (`alembic upgrade head` — initial schema, postgis geography
+      columns, audit_log append-only trigger). `backend/app/seed.py` run
+      twice against the real dev database: 4 territories (1 province +
+      3 communes), 10 douars, 4 users (one per role), 15 reports, 1
+      active scoring_config — identical counts both times, confirming
+      idempotency per the plan's own acceptance criterion. 7 model tests
+      pass, 0 skipped.
 - [x] 1.3 Auth — `POST /auth/login` (lockout after 5 failures, 15 min;
       per-IP rate limiting via `app/core/rate_limit.py`, an in-memory
       limiter — documented there as needing a shared store like Redis for
@@ -231,25 +254,24 @@ for the full spec and section 9 for the build order this follows.
       `new_value` audit example deferred from 1.4 (user update, user
       deactivate, user territory reassignment all now have one).
       113 tests total, 1 skipped (still the PostGIS-blocked report test).
-- [~] 1.6 Douars and reports (read side) — **code complete, not yet
-      verified** (blocked on PostGIS, same as the rest of the stack —
-      see environment notes). `POST/GET /douars`, `GET/PATCH /douars/{id}`
-      (admin/manager write, all 4 roles read, territory-scoped;
-      cross-territory access returns 404 not 403, per section 6.5);
-      `GET /reports` (filters: status, douar/commune/province, score
-      range, date range, `sort_by_score`) and `GET /reports/{id}` (with
-      media, latest priority breakdown, validation history). Added
-      `app/core/geo.py` (lat/lon ↔ geography(Point) conversions, used by
-      douars/reports routes and refactored into `seed.py` too) and
-      `shapely` as an explicit dependency for that. Extracted
-      `get_descendant_ids()` out of `territory_scope.py`'s existing
-      `get_accessible_territory_ids()` so the new `province_id` report
-      filter can resolve "all communes under this province" the same
-      way user access resolution does — re-ran the existing territory
-      scope tests after that refactor, still green. 9 tests written
-      (4 douars, 5 reports) covering territory scoping, the 404-not-403
-      rule, status/score filtering, sorting, and the detail endpoint's
-      media/priority/validations enrichment — none run yet.
+- [x] 1.6 Douars and reports (read side) — `POST/GET /douars`,
+      `GET/PATCH /douars/{id}` (admin/manager write, all 4 roles read,
+      territory-scoped; cross-territory access returns 404 not 403, per
+      section 6.5); `GET /reports` (filters: status, douar/commune/
+      province, score range, date range, `sort_by_score`) and
+      `GET /reports/{id}` (with media, latest priority breakdown,
+      validation history). `app/core/geo.py` (lat/lon ↔ geography(Point)
+      conversions), `shapely` added as an explicit dependency.
+      `get_descendant_ids()` extracted from `territory_scope.py` so the
+      `province_id` report filter resolves "all communes under this
+      province" the same way user access resolution does. All 9 tests
+      (4 douars, 5 reports) pass against the real Postgres+PostGIS
+      instance on the first run once the migration applied. Also
+      smoke-tested live: started `uvicorn`, logged in as the seeded
+      manager, hit `/auth/me`, `/douars`, `/reports` over real HTTP —
+      territory scoping and lat/lon round-tripping both correct against
+      actually-seeded data (e.g. Ait Ourir douar returned exactly its
+      seeded 31.355/-7.667 coordinates).
 - [x] 1.7 Scoring — `compute_priority` implemented as a pure function in
       `backend/app/services/scoring.py`, 29 unit tests covering every
       criterion, edge cases (zero people, no alternative source, expert
