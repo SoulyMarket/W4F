@@ -231,7 +231,25 @@ for the full spec and section 9 for the build order this follows.
       `new_value` audit example deferred from 1.4 (user update, user
       deactivate, user territory reassignment all now have one).
       113 tests total, 1 skipped (still the PostGIS-blocked report test).
-- [ ] 1.6 Douars and reports (read side) — not started.
+- [~] 1.6 Douars and reports (read side) — **code complete, not yet
+      verified** (blocked on PostGIS, same as the rest of the stack —
+      see environment notes). `POST/GET /douars`, `GET/PATCH /douars/{id}`
+      (admin/manager write, all 4 roles read, territory-scoped;
+      cross-territory access returns 404 not 403, per section 6.5);
+      `GET /reports` (filters: status, douar/commune/province, score
+      range, date range, `sort_by_score`) and `GET /reports/{id}` (with
+      media, latest priority breakdown, validation history). Added
+      `app/core/geo.py` (lat/lon ↔ geography(Point) conversions, used by
+      douars/reports routes and refactored into `seed.py` too) and
+      `shapely` as an explicit dependency for that. Extracted
+      `get_descendant_ids()` out of `territory_scope.py`'s existing
+      `get_accessible_territory_ids()` so the new `province_id` report
+      filter can resolve "all communes under this province" the same
+      way user access resolution does — re-ran the existing territory
+      scope tests after that refactor, still green. 9 tests written
+      (4 douars, 5 reports) covering territory scoping, the 404-not-403
+      rule, status/score filtering, sorting, and the detail endpoint's
+      media/priority/validations enrichment — none run yet.
 - [x] 1.7 Scoring — `compute_priority` implemented as a pure function in
       `backend/app/services/scoring.py`, 29 unit tests covering every
       criterion, edge cases (zero people, no alternative source, expert

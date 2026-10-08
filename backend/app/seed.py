@@ -12,9 +12,9 @@ from the rest of the schema.
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
-from geoalchemy2.elements import WKTElement
 from sqlalchemy.orm import Session
 
+from app.core.geo import point_from_latlon
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models.douar import Douar
@@ -61,10 +61,6 @@ DEMO_USERS: list[tuple[str, str, UserRole]] = [
 ]
 
 DEMO_PASSWORD = "DemoPass1234"
-
-
-def _point(lat: float, lon: float) -> WKTElement:
-    return WKTElement(f"POINT({lon} {lat})", srid=4326)
 
 
 def get_or_create_territory(db: Session, name_fr: str, **kwargs) -> Territory:
@@ -120,7 +116,7 @@ def seed(db: Session) -> None:
             name_fr=name_fr,
             name_ar=name_ar,
             commune_id=commune.id,
-            location=_point(lat, lon),
+            location=point_from_latlon(lat, lon),
             population=population,
             families_count=families,
         )
@@ -188,7 +184,7 @@ def seed(db: Session) -> None:
                 affected_families=5 + i,
                 affected_people=20 + i * 3,
                 observations=f"Demo report #{i + 1}",
-                location=_point(douar_lat, douar_lon),
+                location=point_from_latlon(douar_lat, douar_lon),
                 location_accuracy_m=10.0,
                 collected_at=datetime.now(UTC) - timedelta(days=i),
             )

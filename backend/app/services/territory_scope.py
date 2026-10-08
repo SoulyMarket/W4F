@@ -17,6 +17,31 @@ from app.models.territory import Territory, UserTerritory
 from app.models.user import User
 
 
+def _children_by_parent(db: Session) -> dict[uuid.UUID, list[uuid.UUID]]:
+    children: dict[uuid.UUID, list[uuid.UUID]] = defaultdict(list)
+    for territory_id, parent_id in db.query(Territory.id, Territory.parent_id).all():
+        if parent_id is not None:
+            children[parent_id].append(territory_id)
+    return children
+
+
+def get_descendant_ids(db: Session, root_ids: set[uuid.UUID]) -> set[uuid.UUID]:
+    """`root_ids` plus every territory reachable by following parent_id
+    downward from them (a province's communes, transitively)."""
+    if not root_ids:
+        return set()
+    children_by_parent = _children_by_parent(db)
+    result: set[uuid.UUID] = set()
+    stack = list(root_ids)
+    while stack:
+        territory_id = stack.pop()
+        if territory_id in result:
+            continue
+        result.add(territory_id)
+        stack.extend(children_by_parent.get(territory_id, []))
+    return result
+
+
 def get_accessible_territory_ids(db: Session, user: User) -> set[uuid.UUID]:
     """Every territory `user` is directly assigned to, plus all of their
     descendants (so a province assignment reaches its communes)."""
@@ -24,23 +49,7 @@ def get_accessible_territory_ids(db: Session, user: User) -> set[uuid.UUID]:
         row.territory_id
         for row in db.query(UserTerritory.territory_id).filter_by(user_id=user.id).all()
     }
-    if not assigned:
-        return set()
-
-    children_by_parent: dict[uuid.UUID, list[uuid.UUID]] = defaultdict(list)
-    for territory_id, parent_id in db.query(Territory.id, Territory.parent_id).all():
-        if parent_id is not None:
-            children_by_parent[parent_id].append(territory_id)
-
-    accessible: set[uuid.UUID] = set()
-    stack = list(assigned)
-    while stack:
-        territory_id = stack.pop()
-        if territory_id in accessible:
-            continue
-        accessible.add(territory_id)
-        stack.extend(children_by_parent.get(territory_id, []))
-    return accessible
+    return get_descendant_ids(db, assigned)
 
 
 def territory_scope_filter(
