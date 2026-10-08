@@ -1,4 +1,3 @@
-import time
 
 import jwt as pyjwt
 import pytest

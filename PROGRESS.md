@@ -36,6 +36,55 @@ for the full spec and section 9 for the build order this follows.
 
 ## Decisions / rulings
 
+- **Split the data model into two Alembic migrations** rather than one, to
+  unblock real (not just written-but-unverified) testing while PostGIS is
+  unavailable locally: `e7ddb5e5e606_initial_schema` creates everything
+  except two columns; `2b1e9c52e97c_add_postgis_geography_columns`
+  (depends on `e7ddb5e5e606`) enables the postgis extension and adds
+  `douars.location` / `reports.location` plus their GIST indexes.
+  Verified: the first migration applies cleanly and all 16 tables exist
+  with correct enum labels; the second fails with exactly the expected
+  "extension postgis is not available" error and nothing else. Caveat
+  found while testing: this split helps less than hoped — the ORM model
+  always includes `location` in `INSERT`s (even as `NULL`), so creating
+  *any* `Douar` or `Report` row still fails until the second migration
+  runs. Auth/RBAC/admin/scoring-config/notifications/refresh-tokens are
+  fully testable now; anything touching douars or reports is not.
+- Found and fixed a real bug this split surfaced: `sa.Enum(SomeStrEnum,
+  name=...)` by default uses the Python enum **member names** as the
+  Postgres enum labels, not the `StrEnum` **values** — so `Language` was
+  about to create a `language` type with labels `AR`/`FR` while the code
+  everywhere else uses lowercase `ar`/`fr`, breaking every
+  `server_default` and equality check. Fixed via `values_callable` on a
+  shared `SAEnum(...)` instance per type in `app/models/enums.py`
+  (`app/models/enums.py:140` on). Caught by actually running the
+  migration, not by reading the code — another point for not skipping
+  execution even on the DB-independent-feeling parts.
+- Every native Postgres enum type is declared **exactly once**, as a
+  module-level `SAEnum(...)` in `app/models/enums.py`, and imported by
+  every model that uses it (`severity_level` is used by both
+  `reports.severity_reported` and `validations.urgency_opinion`).
+  Declaring `Enum(X, name=...)` separately in two model files for the
+  same type name is a correctness trap even though — found while
+  building this — Alembic's per-table `checkfirst` during `CREATE TABLE`
+  happens to make it *work*; the shared instance is still used everywhere
+  since relying on that checkfirst behavior wasn't the intent.
+- `reports.id` has **no** server-side default (unlike every other table's
+  UUID PK) — generated client-side on the phone, per section 4, so the
+  offline sync push can be idempotent on that same id.
+- Added a `project_media` table, following the plan's "+ optional media
+  via a `report_media`-like table `project_media`" note in section 4
+  under `project_updates` — not separately itemized in the table list,
+  but explicitly called for in prose.
+- `audit_log` append-only (section 6.6) is enforced with a
+  `BEFORE UPDATE OR DELETE` trigger that raises on any attempt
+  (migration `e4ebb09017d4`), not a bare `REVOKE`: a `REVOKE` only
+  constrains one specific DB role, which isn't defined anywhere in this
+  schema yet and would be bypassed by whichever role a given deployment
+  actually connects as (including a superuser running routine DML by
+  mistake). The trigger applies unconditionally to anyone touching the
+  table.
+
 - Pure, DB-independent pieces were built ahead of their place in the
   section-9 order because they have no dependency on the scaffold being
   runnable end-to-end: the i18n helper (needed everywhere) and the
@@ -68,8 +117,20 @@ for the full spec and section 9 for the build order this follows.
       run. `app/core/security.py` (password hashing, JWT, refresh
       tokens) also done here, ahead of 1.3, since it's pure logic needed
       by several later steps and has no DB dependency.
-- [ ] 1.2 Database — not started (blocked on Postgres credentials + PostGIS
-      for the `geography` columns).
+- [~] 1.2 Database — code complete, partially verified. All 16 tables from
+      section 4 (incl. `project_media`) as typed SQLAlchemy 2.x models in
+      `backend/app/models/`; 3 migrations (initial schema / postgis
+      geography columns / audit_log append-only trigger — see rulings
+      above for why split this way); `backend/app/seed.py` written per
+      spec (idempotent, looks up by natural key before insert) but not
+      yet run — it creates douars and reports, both blocked on PostGIS.
+      `alembic upgrade e7ddb5e5e606` verified against both `w4f` and
+      `w4f_test`; 7 model tests pass (users, territories, user_territories,
+      enum round-trips, uniqueness/FK constraints) against the real
+      Postgres instance. 1 test skipped (report creation — needs
+      PostGIS). Still pending once PostGIS lands: run the remaining 2
+      migrations, run seed.py, un-skip the report test, add
+      douar/report-specific tests.
 - [ ] 1.3 Auth — not started.
 - [ ] 1.4 RBAC, territory scope, audit — not started.
 - [ ] 1.5 Admin endpoints — not started.
