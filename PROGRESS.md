@@ -290,7 +290,26 @@ for the full spec and section 9 for the build order this follows.
       `GET /reports/{id}`, alongside the raw `reason_key`/`reason_params`
       (kept for clients that want to localize themselves). 11 new tests
       (5 service-level, 6 endpoint-level), all passing. 134 tests total.
-- [ ] 1.8 Expert validation — not started.
+- [x] 1.8 Expert validation — `POST /reports/{id}/validations`
+      (expert-only, territory-scoped — 404 outside scope). Decision →
+      status mapping: `validated`/`modified` both move the report to
+      `validated` (ruling: "modified" is still an approval, just one
+      where the expert adjusted something, not a status of its own —
+      there's no such report status to move to); `recheck_requested` →
+      `recheck_requested`; `rejected` → `rejected`. 409 on an
+      already-terminal report (`rejected`/`converted_to_project`).
+      Writes a `status_change` audit row (old/new status), recomputes
+      the report's priority immediately (the expert's `urgency_opinion`
+      feeds `compute_priority` via 1.7's service), and notifies per
+      section 5's trigger list: `recheck_requested` → moqaddem only;
+      `validated` → moqaddem **and every manager** (ruling: section 5
+      doesn't scope this to managers of the report's own territory, and
+      building that territory-reverse-lookup wasn't worth it for a
+      prototype at this scale — `notify_all_managers()` in
+      `app/services/notifications.py` is a one-line change if that needs
+      tightening later); `rejected` → no notification at all, since
+      section 5's trigger list doesn't list one for it. 9 new tests, all
+      passing. 143 tests total.
 - [ ] 1.9 Projects — not started.
 - [ ] 1.10 Dashboard + map + media + notifications — not started.
 

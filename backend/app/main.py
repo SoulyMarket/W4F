@@ -1,7 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import audit, auth, douars, health, reports, scoring, territories, users
+from app.api.routes import (
+    audit,
+    auth,
+    douars,
+    health,
+    reports,
+    scoring,
+    territories,
+    users,
+    validations,
+)
 from app.core.config import Settings
 
 settings = Settings()
@@ -29,3 +39,4 @@ app.include_router(audit.router, prefix="/api/v1")
 app.include_router(douars.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
 app.include_router(scoring.router, prefix="/api/v1")
+app.include_router(validations.router, prefix="/api/v1")
