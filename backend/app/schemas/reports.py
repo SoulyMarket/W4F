@@ -30,6 +30,7 @@ class PriorityBreakdownEntryOut(BaseModel):
     points: float
     reason_key: str
     reason_params: dict
+    reason: str  # reason_key/params rendered via app.i18n in the caller's language
 
 
 class PriorityOut(BaseModel):

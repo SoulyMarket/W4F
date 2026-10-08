@@ -24,6 +24,7 @@ from app.schemas.reports import (
     ReportOut,
     ValidationOut,
 )
+from app.services.priority import localize_breakdown
 from app.services.territory_scope import get_descendant_ids, territory_scope_filter
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -172,11 +173,45 @@ def get_report(
         priority=(
             PriorityOut(
                 score=latest_priority.score,
-                breakdown=latest_priority.breakdown,
+                breakdown=localize_breakdown(latest_priority.breakdown, lang),
                 computed_at=latest_priority.computed_at,
             )
             if latest_priority
             else None
         ),
         validations=[ValidationOut.model_validate(v) for v in validations],
+    )
+
+
+@router.get("/{report_id}/priority", response_model=PriorityOut)
+def get_report_priority(
+    report_id: uuid.UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_any),
+) -> PriorityOut:
+    """score + explanation (section 5) — the breakdown the UI renders as
+    «لماذا هذه الأولوية؟» / «Pourquoi cette priorité ?»."""
+    lang = get_request_language(request)
+    report = _reports_query_with_scope(db, current_user).filter(Report.id == report_id).first()
+    if report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        )
+
+    latest_priority = (
+        db.query(Priority)
+        .filter_by(report_id=report.id)
+        .order_by(Priority.computed_at.desc())
+        .first()
+    )
+    if latest_priority is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        )
+
+    return PriorityOut(
+        score=latest_priority.score,
+        breakdown=localize_breakdown(latest_priority.breakdown, lang),
+        computed_at=latest_priority.computed_at,
     )

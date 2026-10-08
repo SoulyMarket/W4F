@@ -272,11 +272,24 @@ for the full spec and section 9 for the build order this follows.
       territory scoping and lat/lon round-tripping both correct against
       actually-seeded data (e.g. Ait Ourir douar returned exactly its
       seeded 31.355/-7.667 coordinates).
-- [x] 1.7 Scoring — `compute_priority` implemented as a pure function in
-      `backend/app/services/scoring.py`, 29 unit tests covering every
-      criterion, edge cases (zero people, no alternative source, expert
-      override), custom weights, and breakdown sorting. Config
-      endpoints + recompute-on-change still need 1.2's DB models.
+- [x] 1.7 Scoring — `compute_priority` (pure function, 29 unit tests) now
+      fully wired to the database. `app/services/priority.py`: builds
+      `ReportForScoring`/`ValidationForScoring` from a persisted
+      Report (+ its latest Validation's `urgency_opinion`, if any),
+      persists the result as a new `Priority` row, and
+      `recompute_all_open_reports()` does this for every report not in a
+      terminal status (`rejected`/`converted_to_project`) when the
+      active config changes. `GET/PUT /scoring-config` (manager-only
+      write; `PUT` deactivates the old config, creates a new active one,
+      recomputes, and returns `reports_recomputed`), `GET
+      /reports/{id}/priority` (score + explanation, 404 if nothing
+      computed yet). Section 2.1 explicitly lists "priority reasons"
+      among the things the API must localize via `Accept-Language` —
+      added a `reason` field (rendered through `app.i18n.t()`) to every
+      breakdown entry in both this endpoint and the embedded priority in
+      `GET /reports/{id}`, alongside the raw `reason_key`/`reason_params`
+      (kept for clients that want to localize themselves). 11 new tests
+      (5 service-level, 6 endpoint-level), all passing. 134 tests total.
 - [ ] 1.8 Expert validation — not started.
 - [ ] 1.9 Projects — not started.
 - [ ] 1.10 Dashboard + map + media + notifications — not started.
