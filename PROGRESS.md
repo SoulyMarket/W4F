@@ -36,6 +36,24 @@ for the full spec and section 9 for the build order this follows.
 
 ## Decisions / rulings
 
+- FastAPI resolved to version 0.143.0 (pinned only `>=0.115` in
+  `pyproject.toml`), which turned out to have substantially reworked
+  routing internals: `app.routes` no longer holds a flat list of
+  `APIRoute` — an included router shows up as an internal `_IncludedRouter`
+  wrapper one level up, and `APIRoute.path` doesn't include the router's
+  `prefix` (that's resolved via `app.url_path_for(name)` instead). Found
+  by actually inspecting `app.routes` at a Python prompt while writing the
+  route-coverage test, not from documentation. `tests/test_route_coverage.
+  py`'s `_iter_api_routes()` walks recursively and handles both shapes so
+  it isn't quietly broken by the next FastAPI release either.
+- `logout`, `logout-all`, `me`, and `change-password` were switched from a
+  bare `Depends(get_current_user)` to `Depends(require_roles(*ALL_ROLES))`
+  so the route-coverage test's exemption list stays exactly
+  {health, login, refresh} per the plan's own wording in step 1.3's
+  security requirement — any route needing "some authenticated user,
+  any role" declares that explicitly rather than being a second kind of
+  implicit exemption the coverage test would need to special-case.
+
 - **Regenerated the initial migration a second time** after finding that
   `users.locked_until`/`last_login_at` were missing `timezone=True` (caught
   by an actual test comparing a DB-round-tripped value against
@@ -176,7 +194,29 @@ for the full spec and section 9 for the build order this follows.
       `app/services/audit.py` helper (the full audit write-path lands
       properly in 1.4, but login needed it now for the "wrong password
       locks the account" acceptance test).
-- [ ] 1.4 RBAC, territory scope, audit — not started.
+- [x] 1.4 RBAC, territory scope, audit — `require_roles(...)` (deps.py)
+      used by every route; a route-coverage test walks the full FastAPI
+      route tree (including a meta-test that proves the detection logic
+      itself actually flags an unguarded synthetic route, not just that
+      it passes vacuously) and fails on anything not using
+      `require_roles` except the hand-reviewed exemption list
+      (health/login/refresh). `app/services/territory_scope.py`:
+      `get_accessible_territory_ids()` resolves a user's assigned
+      territories plus all descendants ("a province assignment sees its
+      communes"); a user with zero assignments gets an empty set, not
+      everything — least privilege is the default. Fully tested (4
+      tests: no assignment, direct commune, province-sees-communes,
+      multiple assignments unioned) since this only touches
+      territories/user_territories, not douars/reports. `write_audit_log`
+      (built in 1.3) is the single audit writer everything uses.
+      **Deferred to 1.6**: the plan's own acceptance criterion "a
+      moqaddem/expert from territory A gets 404 on territory B
+      resources" needs an actual territory-bound resource to test against
+      (douars/reports) — there's nothing to scope yet. Also deferred:
+      a full create/update/delete example demonstrating `old_value`/
+      `new_value` capture — audit so far only has login/logout/
+      change-password, which don't have a real "before" state to diff;
+      1.5's user CRUD is the first natural place for that.
 - [ ] 1.5 Admin endpoints — not started.
 - [ ] 1.6 Douars and reports (read side) — not started.
 - [x] 1.7 Scoring — `compute_priority` implemented as a pure function in

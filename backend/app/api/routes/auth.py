@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_request_language, get_settings
+from app.api.deps import ALL_ROLES, get_request_language, get_settings, require_roles
 from app.core.config import Settings
 from app.core.rate_limit import login_ip_rate_limiter
 from app.core.security import (
@@ -225,7 +225,7 @@ def refresh(
 def logout(
     body: LogoutRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(*ALL_ROLES)),
 ) -> dict[str, bool]:
     token_hash = hash_refresh_token(body.refresh_token)
     row = (
@@ -249,7 +249,7 @@ def logout(
 @router.post("/logout-all")
 def logout_all(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(*ALL_ROLES)),
 ) -> dict[str, bool]:
     now = datetime.now(UTC)
     rows = (
@@ -275,7 +275,7 @@ def logout_all(
 @router.get("/me", response_model=MeResponse)
 def me(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(*ALL_ROLES)),
 ) -> MeResponse:
     territories = (
         db.query(Territory)
@@ -298,7 +298,7 @@ def change_password(
     body: ChangePasswordRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(*ALL_ROLES)),
 ) -> dict[str, bool]:
     lang = get_request_language(request)
     if not verify_password(body.current_password, current_user.password_hash):

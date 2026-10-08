@@ -51,6 +51,15 @@ def get_current_user(
     return user
 
 
+#: Every role — used by routes that require *some* authenticated user but
+#: don't restrict by role (e.g. /auth/me). Declaring this explicitly rather
+#: than depending on bare get_current_user keeps the route-coverage test
+#: (section 6.4) simple: every route either declares required roles via
+#: require_roles(...), or is on the hand-checked exemption list
+#: (login/refresh/health).
+ALL_ROLES: tuple[UserRole, ...] = tuple(UserRole)
+
+
 def require_roles(*roles: UserRole) -> Callable[..., User]:
     """Dependency factory: raises 403 unless the current user's role is one
     of `roles`. Every route except login/refresh/health must declare this
@@ -66,4 +75,5 @@ def require_roles(*roles: UserRole) -> Callable[..., User]:
             )
         return current_user
 
+    dependency.__w4f_required_roles__ = roles
     return dependency
