@@ -26,10 +26,13 @@ for the full spec and section 9 for the build order this follows.
   unknown `postgres` superuser password, and I won't weaken local auth
   (pg_hba.conf) myself — that's a system/security-settings change my
   own operating rules keep off-limits even with blanket permission.
-  A one-time PowerShell snippet to set known dev credentials (`w4f` /
-  `devpassword123`, databases `w4f` and `w4f_test`) was handed to the
-  user to run themselves. `.env` (once created, git-ignored) will use
-  those credentials.
+  The user ran a one-time PowerShell snippet to set known dev
+  credentials (`w4f` / `devpassword123`, databases `w4f` and
+  `w4f_test`) and restore secure auth afterward — **done**, confirmed
+  reachable. `.env` at the repo root (git-ignored) uses these
+  credentials; `backend/app/core/config.py` looks for it at `.env` or
+  `../.env` so it's found whether you run tools from the repo root or
+  from `backend/`.
 
 ## Decisions / rulings
 
@@ -55,12 +58,16 @@ for the full spec and section 9 for the build order this follows.
 
 ## Step status (Phase 1 — Backend)
 
-- [ ] 1.1 Scaffold — in progress: repo layout, `pyproject.toml`,
-      `docker-compose.yml`, `.env.example`, `Dockerfile`, i18n helper +
-      `ar.json`/`fr.json` + key-parity test done. `/health` endpoint and
-      README still to do; `docker compose up` can't be verified locally
-      (see environment notes) — will verify `GET /api/v1/health` against
-      the native Postgres instead once credentials are set.
+- [x] 1.1 Scaffold — repo layout, `pyproject.toml`, `docker-compose.yml`,
+      `.env.example`, `Dockerfile`, i18n helper + `ar.json`/`fr.json` +
+      key-parity test, `/health` endpoint (checks DB connectivity via a
+      real `SELECT 1`), README. `docker compose up` itself can't be
+      verified locally (see environment notes above) — verified instead
+      with `GET /api/v1/health` against the native Postgres 16 instance,
+      which is the equivalent check `docker compose`'s healthcheck would
+      run. `app/core/security.py` (password hashing, JWT, refresh
+      tokens) also done here, ahead of 1.3, since it's pure logic needed
+      by several later steps and has no DB dependency.
 - [ ] 1.2 Database — not started (blocked on Postgres credentials + PostGIS
       for the `geography` columns).
 - [ ] 1.3 Auth — not started.

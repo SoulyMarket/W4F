@@ -3,7 +3,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Local/native dev runs from backend/, so the repo-root .env (the one
+    # docker-compose also uses) is found via "../.env"; ".env" covers running
+    # from the repo root instead. Inside Docker, compose injects real env
+    # vars directly and no file is needed.
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
     env: str = "dev"
 
