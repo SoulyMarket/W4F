@@ -6,7 +6,7 @@ schema migration so the rest of the schema can be created and tested on a
 plain PostgreSQL instance without PostGIS installed — see PROGRESS.md.
 
 Revision ID: 2b1e9c52e97c
-Revises: e7ddb5e5e606
+Revises: 6fa4e9cbc1db
 Create Date: 2026-10-08 21:25:26.923033
 
 """
@@ -19,7 +19,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '2b1e9c52e97c'
-down_revision: Union[str, Sequence[str], None] = 'e7ddb5e5e606'
+down_revision: Union[str, Sequence[str], None] = '6fa4e9cbc1db'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

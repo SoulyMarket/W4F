@@ -7,9 +7,9 @@ it this way means the rest of the schema (auth, RBAC, admin, scoring,
 validations, projects, notifications...) can be created and tested on
 a plain PostgreSQL instance without PostGIS installed.
 
-Revision ID: e7ddb5e5e606
+Revision ID: 6fa4e9cbc1db
 Revises:
-Create Date: 2026-10-08 21:26:43.599003
+Create Date: 2026-10-08 21:35:43.605450
 
 """
 from typing import Sequence, Union
@@ -19,7 +19,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'e7ddb5e5e606'
+revision: str = '6fa4e9cbc1db'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,8 +48,8 @@ def upgrade() -> None:
     sa.Column('preferred_language', sa.Enum('ar', 'fr', name='language'), server_default='ar', nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('failed_login_count', sa.Integer(), nullable=False),
-    sa.Column('locked_until', sa.DateTime(), nullable=True),
-    sa.Column('last_login_at', sa.DateTime(), nullable=True),
+    sa.Column('locked_until', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -300,3 +300,27 @@ def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('territories')
     # ### end Alembic commands ###
+
+    # Alembic's autogenerate does not emit DROP TYPE for the native Postgres
+    # enums it implicitly created alongside the tables above — found the
+    # hard way (a downgrade-then-upgrade cycle during development left 15
+    # orphaned types that collided with the next CREATE TYPE). Drop them
+    # explicitly so downgrade is actually the inverse of upgrade.
+    for enum_name in (
+        "territory_level",
+        "user_role",
+        "language",
+        "audit_action",
+        "water_source",
+        "problem_type",
+        "interruption_frequency",
+        "severity_level",
+        "report_status",
+        "media_kind",
+        "upload_status",
+        "validation_decision",
+        "solution_type",
+        "project_status",
+        "notification_type",
+    ):
+        op.execute(f"DROP TYPE IF EXISTS {enum_name}")
