@@ -383,4 +383,61 @@ for the full spec and section 9 for the build order this follows.
       bytes uploaded. 7 new tests, all passing. 175 tests total — **all
       of Phase 1 is now complete and verified.**
 
-Phase 2 (Android), Phase 3 (Web), Phase 4 (AI) — not started.
+## Phase 2 — Android
+
+### Environment setup
+
+- **Android Studio** installed via winget (`Google.AndroidStudio`) — bundles
+  a JBR (JetBrains Runtime) JDK 25 at
+  `C:\Program Files\Android\Android Studio\jbr`, used as `JAVA_HOME` for all
+  Gradle builds here instead of the system's old Java 8.
+- **Android SDK**: no `sdkmanager` ships with a bare Android Studio install
+  anymore (SDK components normally download via the first-run GUI wizard,
+  which isn't an option headless). Found and installed `Google.AndroidCLI`
+  via winget instead — an official Google-published CLI
+  (`developer.android.com/tools/agents/android-cli`) explicitly built for
+  agentic/headless Android development: SDK package management, project
+  scaffolding, build/deploy, emulator control, and a bundled live Android
+  documentation search (`android docs search`/`docs fetch`), which is what
+  resolved the AGP 9 compatibility issues below instead of guessing version
+  numbers. Installed via `android sdk install platform-tools
+  "platforms;android-35" "build-tools;35.0.0"`. SDK root:
+  `C:\Users\souly\AppData\Local\Android\Sdk`.
+- **No emulator** — `systeminfo`/`Get-ComputerInfo` show `HyperVisorPresent:
+  True`, the same nested-virtualization signature that blocked Docker (see
+  Phase 1's environment notes): this machine is itself a VM. The Android
+  emulator needs the same acceleration (WHPX/Hyper-V) Docker's backend
+  needed, so it's assumed unavailable here without being separately
+  re-confirmed (not worth the multi-GB system-image download just to watch
+  it fail the same way). **Verification strategy for all of Phase 2
+  accordingly: JVM-level unit tests (JUnit, Robolectric where Android
+  framework classes are needed, Room's in-memory/Robolectric test support)
+  rather than instrumented/emulator tests** — mirrors Phase 1's PostGIS
+  workaround (verify everything possible locally, document what can't be).
+- Scaffolded with `android create empty-activity --namespace=com.w4f.app
+  --min-sdk=26 --output=./android` (only template available) — modern
+  Compose setup (Kotlin 2.3.20, AGP 9.0.1, Navigation3, Gradle 9.1.0), then
+  heavily extended.
+- **AGP 9.0's "built-in Kotlin" broke both `kapt` and old Hilt outright** —
+  found by actually trying to resolve dependencies, not foreseeable from
+  the plan or from memory of older Android tooling:
+  - Hilt 2.57 (a plausible "current" guess) failed with "Android
+    BaseExtension not found" — `android docs search`/`docs fetch` turned up
+    an AGP-9 plugin-compatibility doc stating Hilt needs **≥ 2.59** for
+    AGP 9. Bumped it.
+  - `org.jetbrains.kotlin.kapt` then failed outright: "not compatible with
+    built-in Kotlin support" — AGP 9 removed the old `kotlin-android`
+    plugin path kapt depended on. Google's own migration doc recommends
+    moving to KSP rather than using the `legacy-kapt` compatibility shim,
+    so that's what was done: **KSP 2.3.4** (the version Google's own
+    current migration doc uses as its example) replaces kapt for Room's
+    and Hilt's annotation processors (`ksp(...)` instead of `kapt(...)`).
+  - Confirmed clean after both fixes: `:app:dependencies` resolves the full
+    graph (Hilt, Room+SQLCipher, Retrofit+OkHttp+kotlinx.serialization,
+    WorkManager, security-crypto, DataStore, CameraX, Play Services
+    Location, MapLibre, Firebase BOM — the full stack section 2's Android
+    column lists, added in one pass since they don't conflict with each
+    other), and `:app:compileDebugKotlin` runs `kspDebugKotlin` then
+    compiles successfully.
+
+Phase 3 (Web), Phase 4 (AI) — not started.
