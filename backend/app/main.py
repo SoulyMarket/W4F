@@ -4,8 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import (
     audit,
     auth,
+    dashboard,
     douars,
     health,
+    notifications,
     projects,
     reports,
     scoring,
@@ -42,3 +44,5 @@ app.include_router(reports.router, prefix="/api/v1")
 app.include_router(scoring.router, prefix="/api/v1")
 app.include_router(validations.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")

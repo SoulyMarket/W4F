@@ -327,6 +327,39 @@ for the full spec and section 9 for the build order this follows.
       audience with `project_status_changed`, or `project_completed`
       specifically when the new status is `completed`. 9 new tests, all
       passing first try. 152 tests total.
-- [ ] 1.10 Dashboard + map + media + notifications — not started.
+- [~] 1.10 Dashboard + map + notifications — in progress, media still to
+      do (see note below). `GET /dashboard/summary` and `GET
+      /dashboard/map` (both manager-only — section 1 is the only role
+      row that lists "dashboard and map"): totals, reports/projects by
+      status, priority douars (latest score ≥ 70), recurring-problem
+      douars (≥ 3 reports in the trailing 12 months), and a GeoJSON
+      `FeatureCollection` with per-douar latest score/report count/
+      latest project status. `app/services/dashboard.py` factors out
+      "latest priority score per report" and "latest project status per
+      douar" so both endpoints compute them identically rather than
+      drifting. `GET /notifications` (own notifications only, paginated,
+      `unread_count`, localized `message` via `app.i18n.t()`), `POST
+      /notifications/{id}/read`, `POST /devices` (FCM token
+      registration, upserts on a token already registered to someone
+      else — a phone can change owners). Also closed a gap from 1.7/1.8:
+      section 5 lists "priority changed by ≥ 10 points" as a
+      notification trigger but — unlike every other trigger in that
+      list — never names a recipient; ruled the same audience as
+      validated/project triggers (moqaddem + all managers) and wired it
+      directly into `recompute_priority()` so both call sites (manual
+      validation, bulk config-change recompute) get it for free. 22 new
+      tests (13 dashboard/notifications + 3 priority-change-notification
+      + the rest from closing that gap), all passing. 168 tests total.
+      **Media deferred**: `POST /media/upload-url`, `POST
+      /media/{id}/complete` need a running S3-compatible store to
+      verify against (presigned-URL generation and mime/size validation
+      are pure code, but "verify object exists, size, sha256" needs a
+      real `head_object` call). MinIO's winget package
+      (`MinIO.Server`) currently fails to install — its manifest points
+      at a specific dated release archive on `dl.min.io` that MinIO has
+      since pruned (`410 Gone`), an upstream packaging issue, not
+      something fixable from here. Options when picking this back up:
+      retry winget (MinIO may re-publish a working manifest), or ask the
+      user how they'd like to get a local S3-compatible store running.
 
 Phase 2 (Android), Phase 3 (Web), Phase 4 (AI) — not started.
