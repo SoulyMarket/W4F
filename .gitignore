@@ -17,6 +17,9 @@ node_modules/
 dist/
 .vite/
 
+# Scratch working dirs (e.g. font extraction) — never meant to be committed
+.scratch-*/
+
 # Android
 android/.gradle/
 android/build/

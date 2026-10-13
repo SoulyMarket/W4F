@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.db.session import get_db
-from app.i18n import t
 from app.models.enums import AuditAction, UserRole
 from app.models.territory import Territory
 from app.models.user import User
@@ -19,8 +19,10 @@ _require_admin = require_roles(UserRole.ADMIN)
 def _get_territory_or_404(db: Session, territory_id, lang: str) -> Territory:
     territory = db.get(Territory, territory_id)
     if territory is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     return territory
 
@@ -41,9 +43,10 @@ def create_territory(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     write_audit_log(
@@ -105,9 +108,10 @@ def update_territory(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     new_value = {

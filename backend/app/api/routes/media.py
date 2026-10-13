@@ -1,13 +1,13 @@
 import hashlib
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, get_settings, require_roles
 from app.core.config import Settings
+from app.core.errors import ApiError
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import UploadStatus, UserRole
 from app.models.report import Report
@@ -57,15 +57,15 @@ def create_upload_url(
         .first()
     )
     if report is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
 
     error_key = validate_media_mime_and_size(body.kind.value, body.mime_type, body.size_bytes)
     if error_key:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=t(error_key, lang)
-        )
+        raise ApiError(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, key=error_key, lang=lang)
 
     extension = _EXTENSION_BY_MIME.get(body.mime_type, "")
     object_key = f"reports/{report.id}/{uuid.uuid4()}{extension}"
@@ -112,31 +112,36 @@ def complete_upload(
         .first()
     )
     if media is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
 
     client = get_s3_client(settings)
     try:
         head = client.head_object(Bucket=settings.minio_bucket, Key=media.object_key)
     except client.exceptions.ClientError:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.not_found", lang),
+            key="errors.not_found",
+            lang=lang,
         ) from None
 
     if head["ContentLength"] != media.size_bytes:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.media_too_large", lang),
+            key="errors.media_too_large",
+            lang=lang,
         )
 
     obj = client.get_object(Bucket=settings.minio_bucket, Key=media.object_key)
     actual_sha256 = hashlib.sha256(obj["Body"].read()).hexdigest()
     if actual_sha256 != body.sha256:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         )
 
     media.sha256 = body.sha256

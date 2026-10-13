@@ -1,15 +1,15 @@
 import secrets
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.core.security import hash_password
 from app.db.session import get_db
-from app.i18n import t
 from app.models.enums import AuditAction, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.territory import UserTerritory
@@ -32,8 +32,10 @@ _require_admin = require_roles(UserRole.ADMIN)
 def _get_user_or_404(db: Session, user_id, lang: str) -> User:
     user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     return user
 
@@ -59,8 +61,10 @@ def create_user(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=t("errors.validation_error", lang)
+        raise ApiError(
+            status_code=status.HTTP_409_CONFLICT,
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     write_audit_log(
@@ -136,8 +140,10 @@ def update_user(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=t("errors.validation_error", lang)
+        raise ApiError(
+            status_code=status.HTTP_409_CONFLICT,
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     new_value = {
@@ -245,8 +251,7 @@ def set_user_territories(
     user = _get_user_or_404(db, user_id, lang)
 
     old_ids = sorted(
-        str(row.territory_id)
-        for row in db.query(UserTerritory).filter_by(user_id=user.id).all()
+        str(row.territory_id) for row in db.query(UserTerritory).filter_by(user_id=user.id).all()
     )
     db.query(UserTerritory).filter_by(user_id=user.id).delete()
     for territory_id in body.territory_ids:

@@ -1,11 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import (
     AuditAction,
@@ -60,13 +60,16 @@ def create_validation(
         .first()
     )
     if report is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     if report.status in _TERMINAL_STATUSES:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_409_CONFLICT,
-            detail=t("errors.invalid_status_transition", lang),
+            key="errors.invalid_status_transition",
+            lang=lang,
         )
 
     validation = Validation(

@@ -17,6 +17,7 @@ from app.api.routes import (
     validations,
 )
 from app.core.config import Settings
+from app.core.errors import ApiError, api_error_handler
 
 settings = Settings()
 
@@ -26,6 +27,8 @@ app = FastAPI(
     redoc_url="/redoc" if settings.docs_enabled else None,
     openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
+
+app.add_exception_handler(ApiError, api_error_handler)
 
 app.add_middleware(
     CORSMiddleware,

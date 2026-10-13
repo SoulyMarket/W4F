@@ -1,10 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.db.session import get_db
 from app.i18n import t
 from app.models.device_token import DeviceToken
@@ -76,13 +77,13 @@ def mark_notification_read(
 ) -> NotificationOut:
     lang = get_request_language(request)
     notification = (
-        db.query(Notification)
-        .filter_by(id=notification_id, user_id=current_user.id)
-        .first()
+        db.query(Notification).filter_by(id=notification_id, user_id=current_user.id).first()
     )
     if notification is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     notification.is_read = True
     db.commit()
@@ -102,9 +103,7 @@ def register_device(
         existing.platform = body.platform
     else:
         db.add(
-            DeviceToken(
-                user_id=current_user.id, fcm_token=body.fcm_token, platform=body.platform
-            )
+            DeviceToken(user_id=current_user.id, fcm_token=body.fcm_token, platform=body.platform)
         )
     db.commit()
     return {"ok": True}

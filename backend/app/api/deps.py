@@ -1,14 +1,14 @@
 from collections.abc import Callable
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.core.errors import ApiError
 from app.core.security import decode_access_token
 from app.db.session import get_db
-from app.i18n import t
 from app.models.enums import UserRole
 from app.models.user import User
 
@@ -33,20 +33,26 @@ def get_current_user(
 ) -> User:
     lang = get_request_language(request)
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("errors.unauthorized", lang)
+        raise ApiError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            key="errors.unauthorized",
+            lang=lang,
         )
     try:
         payload = decode_access_token(credentials.credentials, settings.jwt_secret)
     except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("errors.unauthorized", lang)
+        raise ApiError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            key="errors.unauthorized",
+            lang=lang,
         ) from None
 
     user = db.get(User, payload["sub"])
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("errors.unauthorized", lang)
+        raise ApiError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            key="errors.unauthorized",
+            lang=lang,
         )
     return user
 
@@ -65,13 +71,13 @@ def require_roles(*roles: UserRole) -> Callable[..., User]:
     of `roles`. Every route except login/refresh/health must declare this
     explicitly (section 6.4) — enforced by a route-coverage test."""
 
-    def dependency(
-        request: Request, current_user: User = Depends(get_current_user)
-    ) -> User:
+    def dependency(request: Request, current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in roles:
             lang = get_request_language(request)
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=t("errors.forbidden", lang)
+            raise ApiError(
+                status_code=status.HTTP_403_FORBIDDEN,
+                key="errors.forbidden",
+                lang=lang,
             )
         return current_user
 

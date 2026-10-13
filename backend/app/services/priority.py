@@ -6,9 +6,10 @@ now the only report-affecting change is a new Validation (1.8); report
 fields themselves aren't editable from the API yet.
 """
 
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.orm import Session
 
+from app.core.errors import ApiError
 from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import NotificationType, ReportStatus
@@ -42,9 +43,10 @@ _OPEN_STATUSES = {
 def get_active_scoring_config(db: Session, lang: str = "ar") -> ScoringConfig:
     config = db.query(ScoringConfig).filter_by(is_active=True).one_or_none()
     if config is None:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=t("errors.not_found", lang),
+            key="errors.not_found",
+            lang=lang,
         )
     return config
 
@@ -92,9 +94,7 @@ def recompute_priority(db: Session, report: Report, config: ScoringConfig) -> Pr
     )
 
     validation_input = _latest_validation_for_scoring(db, report.id)
-    result = compute_priority(
-        _report_for_scoring(report), validation_input, config.weights
-    )
+    result = compute_priority(_report_for_scoring(report), validation_input, config.weights)
     priority = Priority(
         report_id=report.id,
         score=result.score,

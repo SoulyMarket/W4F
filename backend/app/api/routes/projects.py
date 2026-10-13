@@ -1,13 +1,13 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import (
     PROJECT_STATUS_TRANSITIONS,
@@ -64,13 +64,16 @@ def create_project_from_report(
         .first()
     )
     if report is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     if report.status != ReportStatus.VALIDATED:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_409_CONFLICT,
-            detail=t("errors.report_not_validated", lang),
+            key="errors.report_not_validated",
+            lang=lang,
         )
 
     project = Project(
@@ -88,9 +91,10 @@ def create_project_from_report(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_409_CONFLICT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     old_status = report.status
@@ -168,8 +172,10 @@ def list_projects(
 def _get_project_or_404(db: Session, project_id: uuid.UUID, user: User, lang: str) -> Project:
     project = _projects_query_with_scope(db, user).filter(Project.id == project_id).first()
     if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     return project
 
@@ -244,9 +250,10 @@ def add_project_update(
     old_status = project.status
     allowed = PROJECT_STATUS_TRANSITIONS.get(old_status, set())
     if body.new_status not in allowed:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_409_CONFLICT,
-            detail=t("errors.invalid_status_transition", lang),
+            key="errors.invalid_status_transition",
+            lang=lang,
         )
 
     project.status = body.new_status

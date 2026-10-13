@@ -46,9 +46,7 @@ def reports_by_douar(
     return grouped
 
 
-def latest_project_status_by_douar(
-    db: Session, douar_ids: list[uuid.UUID]
-) -> dict[uuid.UUID, str]:
+def latest_project_status_by_douar(db: Session, douar_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
     """douar_id -> most recently created project's status, for douars that
     have at least one project."""
     latest: dict[uuid.UUID, str] = {}

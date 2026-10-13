@@ -1,15 +1,15 @@
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, get_settings, require_roles
 from app.core.config import Settings
+from app.core.errors import ApiError
 from app.core.geo import latlon_from_point
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import ReportStatus, UploadStatus, UserRole
 from app.models.priority import Priority
@@ -118,8 +118,7 @@ def list_reports(
     latest = _latest_priority_subquery(db)
     query = query.outerjoin(latest, latest.c.report_id == Report.id).outerjoin(
         Priority,
-        (Priority.report_id == latest.c.report_id)
-        & (Priority.computed_at == latest.c.computed_at),
+        (Priority.report_id == latest.c.report_id) & (Priority.computed_at == latest.c.computed_at),
     )
 
     if min_score is not None:
@@ -151,8 +150,10 @@ def get_report(
     lang = get_request_language(request)
     report = _reports_query_with_scope(db, current_user).filter(Report.id == report_id).first()
     if report is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
 
     media = db.query(ReportMedia).filter_by(report_id=report.id).all()
@@ -213,8 +214,10 @@ def get_report_priority(
     lang = get_request_language(request)
     report = _reports_query_with_scope(db, current_user).filter(Report.id == report_id).first()
     if report is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
 
     latest_priority = (
@@ -224,8 +227,10 @@ def get_report_priority(
         .first()
     )
     if latest_priority is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
 
     return PriorityOut(

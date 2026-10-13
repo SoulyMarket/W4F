@@ -2,11 +2,12 @@ import ipaddress
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import ALL_ROLES, get_request_language, get_settings, require_roles
 from app.core.config import Settings
+from app.core.errors import ApiError
 from app.core.rate_limit import login_ip_rate_limiter
 from app.core.security import (
     create_access_token,
@@ -16,7 +17,6 @@ from app.core.security import (
     verify_password,
 )
 from app.db.session import get_db
-from app.i18n import t
 from app.models.enums import AuditAction, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.territory import Territory, UserTerritory
@@ -89,9 +89,11 @@ def login(
     user_agent = request.headers.get("user-agent")
 
     if ip and login_ip_rate_limiter.is_blocked(ip):
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=t("errors.account_locked", lang, minutes=_FAILED_LOGIN_LOCK_MINUTES),
+            key="errors.account_locked",
+            lang=lang,
+            minutes=_FAILED_LOGIN_LOCK_MINUTES,
         )
 
     user = db.query(User).filter_by(email=body.email).one_or_none()
@@ -110,23 +112,28 @@ def login(
             user_agent=user_agent,
         )
         db.commit()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.invalid_credentials", lang),
+            key="errors.invalid_credentials",
+            lang=lang,
         )
 
     if user is None:
         reject_invalid_credentials()
 
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=t("errors.account_inactive", lang)
+        raise ApiError(
+            status_code=status.HTTP_403_FORBIDDEN,
+            key="errors.account_inactive",
+            lang=lang,
         )
 
     if user.locked_until and user.locked_until > datetime.now(UTC):
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.account_locked", lang, minutes=_FAILED_LOGIN_LOCK_MINUTES),
+            key="errors.account_locked",
+            lang=lang,
+            minutes=_FAILED_LOGIN_LOCK_MINUTES,
         )
 
     if not verify_password(body.password, user.password_hash):
@@ -167,9 +174,10 @@ def refresh(
     row = db.query(RefreshToken).filter_by(token_hash=token_hash).one_or_none()
 
     if row is None:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.refresh_token_invalid", lang),
+            key="errors.refresh_token_invalid",
+            lang=lang,
         )
 
     if row.revoked_at is not None:
@@ -190,30 +198,31 @@ def refresh(
             user_agent=request.headers.get("user-agent"),
         )
         db.commit()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.refresh_token_reused", lang),
+            key="errors.refresh_token_reused",
+            lang=lang,
         )
 
     if row.expires_at < datetime.now(UTC):
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.refresh_token_invalid", lang),
+            key="errors.refresh_token_invalid",
+            lang=lang,
         )
 
     user = db.get(User, row.user_id)
     if user is None or not user.is_active:
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=t("errors.refresh_token_invalid", lang),
+            key="errors.refresh_token_invalid",
+            lang=lang,
         )
 
     tokens = _issue_token_pair(db, user, settings, family_id=row.family_id)
     db.flush()
     new_row = (
-        db.query(RefreshToken)
-        .filter_by(token_hash=hash_refresh_token(tokens.refresh_token))
-        .one()
+        db.query(RefreshToken).filter_by(token_hash=hash_refresh_token(tokens.refresh_token)).one()
     )
     row.revoked_at = datetime.now(UTC)
     row.replaced_by = new_row.id
@@ -302,9 +311,10 @@ def change_password(
 ) -> dict[str, bool]:
     lang = get_request_language(request)
     if not verify_password(body.current_password, current_user.password_hash):
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=t("errors.invalid_credentials", lang),
+            key="errors.invalid_credentials",
+            lang=lang,
         )
     current_user.password_hash = hash_password(body.new_password)
     write_audit_log(

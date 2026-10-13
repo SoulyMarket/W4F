@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_request_language, require_roles
+from app.core.errors import ApiError
 from app.core.geo import latlon_from_point, point_from_latlon
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import AuditAction, UserRole
 from app.models.user import User
@@ -42,8 +42,10 @@ def _get_douar_or_404(db: Session, douar_id, user: User, lang: str) -> Douar:
     scope = territory_scope_filter(Douar.commune_id, db, user)
     douar = db.query(Douar).filter(Douar.id == douar_id, scope).first()
     if douar is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=t("errors.not_found", lang)
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
         )
     return douar
 
@@ -70,9 +72,10 @@ def create_douar(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     write_audit_log(
@@ -103,9 +106,7 @@ def list_douars(
         query = query.filter((Douar.name_ar.ilike(like)) | (Douar.name_fr.ilike(like)))
 
     total = query.with_entities(func.count(Douar.id)).scalar()
-    items = (
-        query.order_by(Douar.name_fr).offset((page - 1) * page_size).limit(page_size).all()
-    )
+    items = query.order_by(Douar.name_fr).offset((page - 1) * page_size).limit(page_size).all()
     return DouarListOut(
         items=[_to_out(d) for d in items], total=total, page=page, page_size=page_size
     )
@@ -150,9 +151,10 @@ def update_douar(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
+        raise ApiError(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=t("errors.validation_error", lang),
+            key="errors.validation_error",
+            lang=lang,
         ) from None
 
     write_audit_log(

@@ -440,4 +440,37 @@ for the full spec and section 9 for the build order this follows.
     other), and `:app:compileDebugKotlin` runs `kspDebugKotlin` then
     compiles successfully.
 
+## Phase 1 correction (found while starting Phase 2)
+
+Writing the Android app's error-handling DTOs against section 5's documented
+error contract — `{"error": {"code": "...", "message": "..."}}` — surfaced
+that the backend never actually implemented this envelope: every route used
+`HTTPException(status_code=..., detail=t(key, lang))`, which FastAPI renders
+as plain `{"detail": "<message>"}`, with no `code` field and no `error`
+wrapper. All 175 Phase 1 tests were passing despite this because none of
+them asserted on error *response bodies*, only status codes.
+
+Fixed properly rather than patched around in the Android client:
+`app/core/errors.py` adds `ApiError(HTTPException)` (carries `code` — derived
+from the i18n key, since both are already stable English identifiers — and
+the localized `message`) plus a registered exception handler that shapes the
+envelope. Converted all 40 `raise HTTPException(...)` call sites across 11
+files to `raise ApiError(...)` — 39 by a one-off regex migration script
+(written, run, then deleted; had one real bug caught by testing it against
+the actual failing case before trusting it — see below), 1 by hand (a
+variable key rather than a literal). `ruff format` cleaned up indentation
+left by the mechanical replacement.
+
+The script's first pass only converted 19 of 40 call sites (missed
+everywhere a trailing comma followed `t(...)`'s closing paren before the
+outer `HTTPException(...)`'s own closing paren — a multi-line-formatting
+case the first regex didn't account for). Found by counting replacements
+per file against a prior `grep` count rather than assuming success, fixed,
+re-ran cleanly.
+
+Added `tests/test_error_envelope.py` (4 tests) to actually verify the
+envelope shape, language fallback, and Accept-Language handling — the gap
+a mechanical "all tests still pass" check would never have caught, since
+nothing was asserting on error bodies before. 179 tests total.
+
 Phase 3 (Web), Phase 4 (AI) — not started.
