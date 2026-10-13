@@ -473,4 +473,46 @@ envelope shape, language fallback, and Accept-Language handling — the gap
 a mechanical "all tests still pass" check would never have caught, since
 nothing was asserting on error bodies before. 179 tests total.
 
+### Step 2.2 — Android scaffold: login + auth, verified on-device
+
+Built: Hilt DI (NetworkModule, RepositoryModule), Retrofit+OkHttp+kotlinx.
+serialization network layer, EncryptedSharedPreferences-backed TokenStore,
+AuthRepository, LoginViewModel/Screen, HomeViewModel/Screen (stub — full
+dossier list is step 2.4), Navigation3-based nav (Login ⇄ Home), the
+backend's error envelope parsed into a typed `ApiException`. 13 new JVM unit
+tests (ViewModel + repository, including the real `HttpException`→
+`ApiException` parsing path), plus the string-resource parity test from the
+scaffold commit — all passing.
+
+**Installed and ran on a real emulator** (user's MSI App Player/BlueStacks)
+rather than stopping at "compiles" — this caught a bug no unit test would:
+`MainActivity` was missing `@AndroidEntryPoint`, which compiles fine but
+crashes at runtime the moment a Hilt-injected `hiltViewModel()` composable
+tries to resolve (`IllegalStateException: ... does not implement
+GeneratedComponent`). Fixed, reinstalled, confirmed via logcat
+("Displayed com.w4f.app/.MainActivity", no crash) and a screenshot: the
+login screen renders correctly — Arabic title, RTL field layout with the
+text cursor on the right, the bundled Noto Sans Arabic font shaping
+correctly, submit button correctly disabled/enabled based on field state.
+
+Typed real credentials and tapped submit: the full request path executed
+(button → ViewModel → repository → Retrofit → OkHttp) and failed with a
+**real network error**, correctly caught and mapped to
+`login_error_network`, displayed in Arabic in the error color — proving the
+error-handling path works, not just the happy path. Root cause: the host's
+network profile is "Public", so Windows Firewall blocks inbound TCP from
+BlueStacks' virtual network to the backend's port 8000 by default — a
+system/security setting, so a firewall rule was handed to the user to run
+themselves (`New-NetFirewallRule -DisplayName "W4F Dev API" -Direction
+Inbound -LocalPort 8000 -Protocol TCP -Action Allow`, as Administrator)
+rather than attempted directly. **Not yet verified: an actual successful
+login round-trip against the real backend** — next session should add the
+firewall rule (or otherwise get connectivity) and confirm that before
+moving on to step 2.3.
+
+MSI App Player also needed "Android Debug Bridge (ADB)" enabled in its own
+settings before `adb` could do more than list the device (push/install/
+shell all failed with connection errors until then) — noted here in case
+reconnecting to the same emulator in a future session hits the same wall.
+
 Phase 3 (Web), Phase 4 (AI) — not started.

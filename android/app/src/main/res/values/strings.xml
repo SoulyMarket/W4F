@@ -1,3 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arabic — default locale (section 2.1). French lives in values-fr/strings.xml
+     with an identical key set; app/build.gradle.kts' lint config should keep
+     these in sync (see PROGRESS.md for the parity-check note). -->
 <resources>
     <string name="app_name">W4F</string>
+
+    <!-- تسجيل الدخول (Login) -->
+    <string name="login_title">تسجيل الدخول</string>
+    <string name="login_email_label">البريد الإلكتروني</string>
+    <string name="login_password_label">كلمة المرور</string>
+    <string name="login_submit">دخول</string>
+    <string name="login_error_invalid_credentials">البريد الإلكتروني أو كلمة المرور غير صحيحة</string>
+    <string name="login_error_account_locked">تم قفل الحساب مؤقتا، حاول لاحقا</string>
+    <string name="login_error_account_inactive">هذا الحساب غير مفعل</string>
+    <string name="login_error_network">تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت</string>
+    <string name="login_error_generic">حدث خطأ، حاول مرة أخرى</string>
+
+    <!-- الرئيسية (Home) -->
+    <string name="home_title">الرئيسية</string>
+    <string name="home_new_report">تبليغ جديد</string>
+    <string name="home_sync_all_synced">كل شيء متزامن</string>
+    <string name="home_sync_pending">%1$d في الانتظار</string>
+    <string name="home_sync_offline">بدون اتصال</string>
+
+    <!-- الإعدادات (Settings) -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_sync_now">مزامنة الآن</string>
+    <string name="settings_wifi_only_upload">رفع الملفات عبر Wi-Fi فقط</string>
+    <string name="settings_logout">تسجيل الخروج</string>
+
+    <!-- عام (Generic) -->
+    <string name="action_retry">إعادة المحاولة</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
 </resources>

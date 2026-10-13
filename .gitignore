@@ -37,3 +37,6 @@ Thumbs.db
 # Test artifacts
 .coverage
 htmlcov/
+
+# Ad hoc debug screenshots taken while testing on a device/emulator
+/screenshot*.png

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bundled (not downloadable-at-runtime) deliberately: this is an offline-first
+  app used in areas with poor/no connectivity, so the Arabic-capable font must
+  be guaranteed present on first launch rather than fetched from the Google
+  Fonts provider at runtime. Covers Arabic + Latin + digits in one font so
+  Western digits (section 2.1) render correctly even in the Arabic locale.
+-->
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        app:font="@font/noto_sans_arabic_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+    <font
+        app:font="@font/noto_sans_arabic_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+</font-family>

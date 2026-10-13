@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- French. Same key set as values/strings.xml (the Arabic default) —
+     keep both files in sync, see PROGRESS.md. -->
+<resources>
+    <string name="app_name">W4F</string>
+
+    <!-- Connexion -->
+    <string name="login_title">Connexion</string>
+    <string name="login_email_label">E-mail</string>
+    <string name="login_password_label">Mot de passe</string>
+    <string name="login_submit">Se connecter</string>
+    <string name="login_error_invalid_credentials">E-mail ou mot de passe incorrect</string>
+    <string name="login_error_account_locked">Compte temporairement verrouillé, réessayez plus tard</string>
+    <string name="login_error_account_inactive">Ce compte est désactivé</string>
+    <string name="login_error_network">Impossible de contacter le serveur, vérifiez votre connexion</string>
+    <string name="login_error_generic">Une erreur est survenue, réessayez</string>
+
+    <!-- Accueil -->
+    <string name="home_title">Accueil</string>
+    <string name="home_new_report">Nouveau signalement</string>
+    <string name="home_sync_all_synced">Tout est synchronisé</string>
+    <string name="home_sync_pending">%1$d en attente</string>
+    <string name="home_sync_offline">Hors ligne</string>
+
+    <!-- Paramètres -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_sync_now">Synchroniser maintenant</string>
+    <string name="settings_wifi_only_upload">Envoyer les fichiers uniquement en Wi-Fi</string>
+    <string name="settings_logout">Déconnexion</string>
+
+    <!-- Générique -->
+    <string name="action_retry">Réessayer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_save">Enregistrer</string>
+</resources>
