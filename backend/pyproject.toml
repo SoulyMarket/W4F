@@ -25,8 +25,15 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "httpx>=0.27",
+    "requests>=2.32",
     "ruff>=0.7",
     "mypy>=1.13",
+    # Mock S3-compatible server for testing media upload flows against a
+    # real boto3-speaking HTTP endpoint without Docker/MinIO — see
+    # PROGRESS.md for why (MinIO's winget package has a broken upstream
+    # manifest, and Docker can't run on this dev machine at all).
+    # Production still targets real MinIO via docker-compose.yml.
+    "moto[server]>=5.0",
 ]
 
 [tool.ruff]

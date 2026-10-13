@@ -223,7 +223,10 @@ def test_report_detail_includes_media_priority_and_validations(client, db_sessio
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["media"]) == 1
-    assert body["media"][0]["object_key"] == "reports/photo1.jpg"
+    # object_key/bucket are never exposed — section 6.10: media only ever
+    # goes out as a short-lived presigned URL.
+    assert "object_key" not in body["media"][0]
+    assert body["media"][0]["download_url"] is not None
     assert body["priority"]["score"] == 55
     assert len(body["validations"]) == 1
     assert body["validations"][0]["decision"] == "validated"

@@ -16,9 +16,12 @@ from app.models.enums import (
 class ReportMediaOut(BaseModel):
     id: uuid.UUID
     kind: str
-    object_key: str
     mime_type: str
     upload_status: str
+    # Never the raw object_key/bucket — section 6.10: media is only ever
+    # exposed through short-lived presigned URLs, generated per-request by
+    # the route handler. None when the upload hasn't completed yet.
+    download_url: str | None = None
 
     model_config = {"from_attributes": True}
 

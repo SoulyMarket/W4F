@@ -71,7 +71,7 @@ def create_douar(
     except IntegrityError:
         db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=t("errors.validation_error", lang),
         ) from None
 
@@ -151,7 +151,7 @@ def update_douar(
     except IntegrityError:
         db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=t("errors.validation_error", lang),
         ) from None
 

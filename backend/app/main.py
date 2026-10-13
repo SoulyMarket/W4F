@@ -7,6 +7,7 @@ from app.api.routes import (
     dashboard,
     douars,
     health,
+    media,
     notifications,
     projects,
     reports,
@@ -46,3 +47,4 @@ app.include_router(validations.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(media.router, prefix="/api/v1")

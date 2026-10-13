@@ -183,7 +183,7 @@ for the full spec and section 9 for the build order this follows.
   matches the plan's stack choice exactly, just installed natively
   instead of via the `postgis/postgis:16` Docker image.
 
-## Step status (Phase 1 — Backend)
+## Step status (Phase 1 — Backend) — ALL STEPS COMPLETE (175 tests, 0 skipped)
 
 - [x] 1.1 Scaffold — repo layout, `pyproject.toml`, `docker-compose.yml`,
       `.env.example`, `Dockerfile`, i18n helper + `ar.json`/`fr.json` +
@@ -327,8 +327,8 @@ for the full spec and section 9 for the build order this follows.
       audience with `project_status_changed`, or `project_completed`
       specifically when the new status is `completed`. 9 new tests, all
       passing first try. 152 tests total.
-- [~] 1.10 Dashboard + map + notifications — in progress, media still to
-      do (see note below). `GET /dashboard/summary` and `GET
+- [x] 1.10 Dashboard + map + media + notifications — complete.
+      `GET /dashboard/summary` and `GET
       /dashboard/map` (both manager-only — section 1 is the only role
       row that lists "dashboard and map"): totals, reports/projects by
       status, priority douars (latest score ≥ 70), recurring-problem
@@ -349,17 +349,38 @@ for the full spec and section 9 for the build order this follows.
       directly into `recompute_priority()` so both call sites (manual
       validation, bulk config-change recompute) get it for free. 22 new
       tests (13 dashboard/notifications + 3 priority-change-notification
-      + the rest from closing that gap), all passing. 168 tests total.
-      **Media deferred**: `POST /media/upload-url`, `POST
-      /media/{id}/complete` need a running S3-compatible store to
-      verify against (presigned-URL generation and mime/size validation
-      are pure code, but "verify object exists, size, sha256" needs a
-      real `head_object` call). MinIO's winget package
-      (`MinIO.Server`) currently fails to install — its manifest points
+      + the rest from closing that gap), all passing. 168 tests total,
+      then +7 media tests below.
+
+      **Media**: `POST /media/upload-url` (validates mime/size per
+      section 6.10's limits — jpeg/png/webp/mp4, 10 MB photo / 100 MB
+      video cap — creates a `pending` `ReportMedia` row, returns a
+      presigned PUT URL), `POST /media/{id}/complete` (verifies the
+      object actually exists via `head_object`, that its size matches
+      what was declared, and that its content's real SHA-256 matches
+      what the client claims — downloads and hashes the object
+      server-side to do this, since neither S3 nor MinIO exposes a
+      SHA-256 natively; only then marks `uploaded`). `GET /reports/{id}`
+      now returns a presigned `download_url` per media item instead of
+      the raw `object_key`/bucket — section 6.10 is explicit that media
+      only ever goes out as a short-lived presigned URL, never a public
+      bucket or a raw key. MinIO's winget package (`MinIO.Server`)
+      still fails — confirmed broken again on retry: its manifest points
       at a specific dated release archive on `dl.min.io` that MinIO has
-      since pruned (`410 Gone`), an upstream packaging issue, not
-      something fixable from here. Options when picking this back up:
-      retry winget (MinIO may re-publish a working manifest), or ask the
-      user how they'd like to get a local S3-compatible store running.
+      pruned (`410 Gone`), an upstream packaging issue I can't fix from
+      here. Used `moto[server]` instead (a well-known PyPI testing
+      library, installed via `pip` — a vetted channel, unlike downloading
+      a `.exe` directly) to run a real local S3-compatible HTTP server
+      for tests: `tests/conftest.py`'s `moto_s3_endpoint` fixture starts
+      `python -m moto.server` on a free port and points the `MINIO_*` env
+      vars at it before any `Settings()` is constructed, so
+      `app/services/storage.py`'s boto3 client — the same one that talks
+      to real MinIO in every other environment — needs zero test-specific
+      code. Verified the *entire* real flow end-to-end, not just mocked
+      pieces: presigned PUT URL generation → an actual HTTP PUT with real
+      bytes → `head_object` → downloading and hashing the object →
+      presigned GET URL → an actual HTTP GET that returns the exact
+      bytes uploaded. 7 new tests, all passing. 175 tests total — **all
+      of Phase 1 is now complete and verified.**
 
 Phase 2 (Android), Phase 3 (Web), Phase 4 (AI) — not started.

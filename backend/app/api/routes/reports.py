@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_request_language, require_roles
+from app.api.deps import get_request_language, get_settings, require_roles
+from app.core.config import Settings
 from app.core.geo import latlon_from_point
 from app.db.session import get_db
 from app.i18n import t
 from app.models.douar import Douar
-from app.models.enums import ReportStatus, UserRole
+from app.models.enums import ReportStatus, UploadStatus, UserRole
 from app.models.priority import Priority
 from app.models.report import Report
 from app.models.report_media import ReportMedia
@@ -25,6 +26,7 @@ from app.schemas.reports import (
     ValidationOut,
 )
 from app.services.priority import localize_breakdown
+from app.services.storage import generate_download_url, get_s3_client
 from app.services.territory_scope import get_descendant_ids, territory_scope_filter
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -144,6 +146,7 @@ def get_report(
     request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(_require_any),
+    settings: Settings = Depends(get_settings),
 ) -> ReportDetailOut:
     lang = get_request_language(request)
     report = _reports_query_with_scope(db, current_user).filter(Report.id == report_id).first()
@@ -153,6 +156,21 @@ def get_report(
         )
 
     media = db.query(ReportMedia).filter_by(report_id=report.id).all()
+    media_out = []
+    for m in media:
+        download_url = None
+        if m.upload_status == UploadStatus.UPLOADED:
+            s3_client = get_s3_client(settings)
+            download_url = generate_download_url(s3_client, settings.minio_bucket, m.object_key)
+        media_out.append(
+            ReportMediaOut(
+                id=m.id,
+                kind=m.kind.value,
+                mime_type=m.mime_type,
+                upload_status=m.upload_status.value,
+                download_url=download_url,
+            )
+        )
     validations = (
         db.query(Validation)
         .filter_by(report_id=report.id)
@@ -169,7 +187,7 @@ def get_report(
     base = _report_to_out(report, latest_priority.score if latest_priority else None)
     return ReportDetailOut(
         **base.model_dump(),
-        media=[ReportMediaOut.model_validate(m) for m in media],
+        media=media_out,
         priority=(
             PriorityOut(
                 score=latest_priority.score,

@@ -1,3 +1,9 @@
+import os
+import socket
+import subprocess
+import sys
+import time
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -47,6 +53,55 @@ def db_session(test_engine):
         if transaction.is_active:
             transaction.rollback()
         connection.close()
+
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+@pytest.fixture(scope="session")
+def moto_s3_endpoint():
+    """A local moto_server instance speaking the S3 API, standing in for
+    MinIO: Docker can't run on this dev machine and MinIO's winget package
+    currently has a broken upstream manifest (see PROGRESS.md). Same
+    boto3-facing surface (presigned PUT/GET, head_object) as real MinIO —
+    only the endpoint changes, via the MINIO_* env vars this fixture sets
+    before any Settings() is constructed by a request.
+    """
+    port = _free_port()
+    endpoint = f"127.0.0.1:{port}"
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "moto.server", "-H", "127.0.0.1", "-p", str(port)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        for _ in range(50):
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                    break
+            except OSError:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError("moto_server did not start in time")
+
+        os.environ["MINIO_ENDPOINT"] = endpoint
+        os.environ["MINIO_SECURE"] = "false"
+        os.environ["MINIO_ACCESS_KEY"] = "test"
+        os.environ["MINIO_SECRET_KEY"] = "test"
+        os.environ["MINIO_BUCKET"] = "w4f-media-test"
+
+        from app.services.storage import get_s3_client
+
+        client = get_s3_client(Settings())
+        client.create_bucket(Bucket="w4f-media-test")
+
+        yield endpoint
+    finally:
+        proc.terminate()
+        proc.wait(timeout=5)
 
 
 @pytest.fixture
