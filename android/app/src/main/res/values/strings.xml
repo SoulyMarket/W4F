@@ -36,4 +36,74 @@
     <string name="action_retry">إعادة المحاولة</string>
     <string name="action_cancel">إلغاء</string>
     <string name="action_save">حفظ</string>
+    <string name="action_next">التالي</string>
+    <string name="action_back">السابق</string>
+    <string name="common_yes">نعم</string>
+    <string name="common_no">لا</string>
+
+    <!-- تبليغ جديد (Nouveau signalement) -->
+    <string name="new_report_title">تبليغ جديد</string>
+    <string name="new_report_step_indicator">الخطوة %1$d من %2$d</string>
+
+    <string name="new_report_step1_title">الدوار</string>
+    <string name="new_report_douar_search_label">ابحث عن الدوار</string>
+    <string name="new_report_douar_empty">لا توجد نتائج</string>
+
+    <string name="new_report_step2_title">المشكل</string>
+    <string name="new_report_water_source_label">مصدر الماء</string>
+    <string name="water_source_network">شبكة الماء</string>
+    <string name="water_source_well">بئر</string>
+    <string name="water_source_spring">عين</string>
+    <string name="water_source_tank_truck">صهريج</string>
+    <string name="water_source_river">واد</string>
+    <string name="water_source_other">آخر</string>
+    <string name="new_report_problem_type_label">نوع المشكل</string>
+    <string name="problem_type_no_water">انعدام الماء</string>
+    <string name="problem_type_intermittent">انقطاع متقطع</string>
+    <string name="problem_type_low_pressure">ضعف الضغط</string>
+    <string name="problem_type_contamination">تلوث الماء</string>
+    <string name="problem_type_broken_pump">عطب في المضخة</string>
+    <string name="problem_type_broken_pipe">عطب في القنوات</string>
+    <string name="problem_type_dry_source">جفاف المصدر</string>
+    <string name="problem_type_other">آخر</string>
+    <string name="new_report_frequency_label">تواتر الانقطاع</string>
+    <string name="frequency_permanent">دائم</string>
+    <string name="frequency_daily">يوميا</string>
+    <string name="frequency_weekly">أسبوعيا</string>
+    <string name="frequency_monthly">شهريا</string>
+    <string name="frequency_rare">نادرا</string>
+    <string name="new_report_severity_label">درجة الخطورة</string>
+    <string name="severity_low">منخفضة</string>
+    <string name="severity_medium">متوسطة</string>
+    <string name="severity_high">مرتفعة</string>
+    <string name="severity_critical">حرجة</string>
+    <string name="new_report_water_quality_risk_label">هل هناك خطر على جودة الماء؟</string>
+
+    <string name="new_report_step3_title">الأرقام</string>
+    <string name="new_report_affected_families_label">عدد الأسر المتضررة</string>
+    <string name="new_report_affected_people_label">عدد الأشخاص المتضررين</string>
+    <string name="new_report_duration_days_label">منذ كم يوما</string>
+    <string name="new_report_has_alternative_source_label">هل يوجد مصدر بديل للماء؟</string>
+    <string name="new_report_alternative_distance_label">المسافة إلى المصدر البديل (كم)</string>
+
+    <string name="new_report_step4_title">الإثباتات</string>
+    <string name="new_report_take_photo">التقاط صورة</string>
+    <string name="new_report_record_video">تسجيل فيديو</string>
+    <string name="new_report_stop_recording">إيقاف التسجيل</string>
+    <string name="new_report_remove_media">حذف</string>
+    <string name="new_report_capture_location">تحديد الموقع</string>
+    <string name="new_report_location_captured">تم تحديد الموقع، الدقة %1$.0f م</string>
+    <string name="new_report_location_unavailable">تعذر تحديد الموقع، يمكن المتابعة بدونه</string>
+    <string name="new_report_camera_permission_rationale">يحتاج التطبيق إذن الكاميرا لالتقاط الصور والفيديو</string>
+    <string name="new_report_location_permission_rationale">يحتاج التطبيق إذن الموقع لتحديد إحداثيات البلاغ</string>
+    <string name="new_report_grant_permission">منح الإذن</string>
+
+    <string name="new_report_step5_title">ملخص</string>
+    <string name="new_report_summary_douar">الدوار</string>
+    <string name="new_report_summary_problem">نوع المشكل</string>
+    <string name="new_report_summary_people">الأشخاص المتضررون</string>
+    <string name="new_report_summary_media_count">عدد الملفات المرفقة: %1$d</string>
+    <string name="new_report_confirm_save">تأكيد وحفظ</string>
+    <string name="new_report_save_dialog_title">تأكيد الحفظ</string>
+    <string name="new_report_save_dialog_message">هل تريد حفظ هذا التبليغ؟ سيتم إرساله تلقائيا عند توفر الاتصال بالإنترنت</string>
 </resources>

@@ -138,6 +138,7 @@ dependencies {
   implementation(libs.androidx.camera.lifecycle)
   implementation(libs.androidx.camera.video)
   implementation(libs.androidx.camera.view)
+  implementation(libs.androidx.exifinterface)
   implementation(libs.play.services.location)
 
   // Map (step 2.5)

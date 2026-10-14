@@ -616,4 +616,104 @@ report twice — `created` then `unchanged` — pulled it back with its score,
 and confirmed the seeded expert actually received the `new_report`
 notification). 191 tests total.
 
+### Step 2.3 — Report form: Room schema, CameraX, GPS, local save
+
+Built in two commits. **Environment note carried over from 2.2**: MSI App
+Player wasn't running at the start of this step (likely closed by the
+earlier PC restart) and hasn't come back up during it — everything below
+is verified by JVM/Robolectric unit tests and `:app:assembleDebug`
+succeeding, **not** by running on a device. On-device verification (and
+the still-outstanding real login round-trip from 2.2) needs the user to
+reopen MSI App Player next session.
+
+**Part 1 — encrypted Room schema + repositories.** `Douar`/`Report`/
+`ReportMedia` Room entities (`data/local/db/`) mirror the backend's own
+shapes closely enough that step 2.4's sync workers can map 1:1 to/from
+them. SQLCipher-encrypted (section 6.12/8: "Room over SQLCipher") via
+`net.zetetic:sqlcipher-android`'s `SupportOpenHelperFactory` — note the
+package is `net.zetetic.database.sqlcipher`, not the older
+`net.sqlcipher.database` some docs/tutorials still reference, found by
+inspecting the actual AAR's `classes.jar` the same way the Retrofit
+converter package name was found in step 2.2. The passphrase lives in
+Keystore-backed `EncryptedSharedPreferences` (`DatabasePassphraseStore`),
+generated once on first run — mirrors `EncryptedTokenStore`'s pattern
+exactly. `DouarRepository`/`ReportRepository` wrap the DAOs behind
+interfaces (same Hilt `@Binds` pattern as `AuthRepository`); reads are
+`Flow`-based so the UI recomposes automatically as Room changes, per
+section 8's "Room is the single source of truth" rule.
+**Robolectric needed `sdk=35` pinned explicitly** (`app/src/test/
+resources/robolectric.properties`) — the app targets SDK 36, one version
+ahead of what Robolectric 4.14.1 ships framework jars for; without it every
+Robolectric test fails at the class-loading stage with "targetSdkVersion=36
+> maxSdkVersion=35", not a problem with the test itself. 2 DAO test classes
+(Room, in-memory, Robolectric — search scoping, Arabic/French name
+matching, sync-state transitions).
+
+**Part 2 — the "تبليغ جديد" stepper + CameraX + GPS.** Five steps exactly
+as section 8 lists them (الدوار → المشكل → الأرقام → الإثباتات → ملخص), one
+`NewReportViewModel` holding the whole draft so step-to-step navigation is
+just an in-memory state change, not a save-and-reload. Per-step validation
+gates "التالي" (e.g. step 2 needs all four chip selections); step 4
+(evidence) never gates anything, per section 8's explicit "never block data
+entry on network or GPS" rule — confirmed by a test that a failed/denied
+GPS fix still leaves `canGoNext == true`.
+
+- **الدوار**: searches the local Room cache only, scoped to the ids in the
+  logged-in user's own `territories` from `/auth/me` — not resolved
+  client-side into province→commune descendants the way the backend does
+  (`get_accessible_territory_ids`); ruling: a moqaddem's own assignment is
+  realistically always their one commune in practice, and building a
+  client-side mirror of the backend's territory-tree walk wasn't worth it
+  for a prototype. Before step 2.4's pull sync exists, this list is simply
+  empty — expected, not a bug; the DAO test fixtures prove the query logic
+  itself works once rows exist.
+- **المشكل**: `FilterChip` groups for water source/problem type/frequency/
+  severity + a switch for the water-quality-risk flag.
+- **الأرقام**: numeric-keypad fields for families/people/duration-in-days,
+  and an alternative-source switch gating a distance field. **Ruling**:
+  section 8's field list for this step has no separate "date the problem
+  started" picker, only duration — so `problem_started_on` (a required
+  server field) is derived as `today − duration_days` at save time rather
+  than adding a date-picker UI the screen spec doesn't call for.
+- **الإثباتات**: real CameraX binding (`Preview` + `ImageCapture`, rebound
+  to `Preview` + `VideoCapture`/`Recorder` when toggled to video mode) with
+  a runtime `CAMERA` permission request; GPS auto-captured on entering the
+  step via `FusedLocationProviderClient.getCurrentLocation()`, wrapped so
+  a missing permission, no fix, or provider error all resolve to `null`
+  rather than throwing. Photos are compressed after capture
+  (`MediaCompressor`: downscale to a 1600px long side, re-encode JPEG 80%,
+  correct for EXIF rotation) per section 8's explicit rule — added
+  `androidx.exifinterface:exifinterface` as a new dependency for the
+  rotation fix, since BitmapFactory alone decodes pixels in sensor
+  orientation and ignoring EXIF is a classic "photos come out sideways"
+  bug. **Simplification, documented rather than silently cut**: video is
+  recorded at CameraX's `Quality.SD` with a hard 60 s auto-stop and no
+  separate compression pass (`Recorder` already encodes directly, unlike
+  `ImageCapture`'s full-resolution JPEG output) — satisfies section 8's
+  "limit video length (e.g. 60 s, 720p)" as a ceiling, not a mandate, and
+  keeps video files well within that budget without a second transcode
+  step. No `RECORD_AUDIO` permission requested — video capture omits audio
+  entirely (silent evidence video is adequate for this use case, and it's
+  one fewer permission prompt).
+- **ملخص**: read-only recap + `AlertDialog` confirmation before the actual
+  `reportRepository.saveNewReport(...)` call — matches section 8's "summary
+  + confirmation dialog before saving" exactly.
+
+Saving writes the report with `sync_state = PENDING` and every captured
+media item the same way — step 2.4's `SyncWorker`/`MediaUploadWorker` pick
+up from there; nothing here talks to the network.
+
+14 new `NewReportViewModel` tests (step-gating per field, douar search
+re-scoping, location capture success/failure, media add/remove, full
+save-path asserting the persisted `Report`/`ReportMedia` shape and
+`PENDING` state) + 2 `MediaCompressor` tests (downscale behavior, aspect
+ratio preserved) + the 2 DAO test classes from part 1 — 35 Android unit
+tests total, all passing; `:app:assembleDebug` succeeds.
+
+**Added to the version catalog**: `androidx.exifinterface:exifinterface`
+(photo rotation, part 2 above). Everything else step 2.3 needed
+(Room/SQLCipher, CameraX, Play Services Location) was already wired into
+`app/build.gradle.kts` back in step 2.2's dependency pass, just unused
+until now.
+
 Phase 3 (Web), Phase 4 (AI) — not started.

@@ -35,4 +35,74 @@
     <string name="action_retry">Réessayer</string>
     <string name="action_cancel">Annuler</string>
     <string name="action_save">Enregistrer</string>
+    <string name="action_next">Suivant</string>
+    <string name="action_back">Précédent</string>
+    <string name="common_yes">Oui</string>
+    <string name="common_no">Non</string>
+
+    <!-- Nouveau signalement -->
+    <string name="new_report_title">Nouveau signalement</string>
+    <string name="new_report_step_indicator">Étape %1$d sur %2$d</string>
+
+    <string name="new_report_step1_title">Douar</string>
+    <string name="new_report_douar_search_label">Rechercher un douar</string>
+    <string name="new_report_douar_empty">Aucun résultat</string>
+
+    <string name="new_report_step2_title">Problème</string>
+    <string name="new_report_water_source_label">Source d\'eau</string>
+    <string name="water_source_network">Réseau</string>
+    <string name="water_source_well">Puits</string>
+    <string name="water_source_spring">Source</string>
+    <string name="water_source_tank_truck">Citerne</string>
+    <string name="water_source_river">Rivière</string>
+    <string name="water_source_other">Autre</string>
+    <string name="new_report_problem_type_label">Type de problème</string>
+    <string name="problem_type_no_water">Absence d\'eau</string>
+    <string name="problem_type_intermittent">Coupures intermittentes</string>
+    <string name="problem_type_low_pressure">Faible pression</string>
+    <string name="problem_type_contamination">Contamination</string>
+    <string name="problem_type_broken_pump">Pompe en panne</string>
+    <string name="problem_type_broken_pipe">Canalisation endommagée</string>
+    <string name="problem_type_dry_source">Source tarie</string>
+    <string name="problem_type_other">Autre</string>
+    <string name="new_report_frequency_label">Fréquence des coupures</string>
+    <string name="frequency_permanent">Permanente</string>
+    <string name="frequency_daily">Quotidienne</string>
+    <string name="frequency_weekly">Hebdomadaire</string>
+    <string name="frequency_monthly">Mensuelle</string>
+    <string name="frequency_rare">Rare</string>
+    <string name="new_report_severity_label">Degré de gravité</string>
+    <string name="severity_low">Faible</string>
+    <string name="severity_medium">Moyenne</string>
+    <string name="severity_high">Élevée</string>
+    <string name="severity_critical">Critique</string>
+    <string name="new_report_water_quality_risk_label">Risque sur la qualité de l\'eau ?</string>
+
+    <string name="new_report_step3_title">Chiffres</string>
+    <string name="new_report_affected_families_label">Nombre de familles concernées</string>
+    <string name="new_report_affected_people_label">Nombre de personnes concernées</string>
+    <string name="new_report_duration_days_label">Depuis combien de jours</string>
+    <string name="new_report_has_alternative_source_label">Existe-t-il une source alternative ?</string>
+    <string name="new_report_alternative_distance_label">Distance jusqu\'à la source alternative (km)</string>
+
+    <string name="new_report_step4_title">Preuves</string>
+    <string name="new_report_take_photo">Prendre une photo</string>
+    <string name="new_report_record_video">Enregistrer une vidéo</string>
+    <string name="new_report_stop_recording">Arrêter l\'enregistrement</string>
+    <string name="new_report_remove_media">Supprimer</string>
+    <string name="new_report_capture_location">Localiser</string>
+    <string name="new_report_location_captured">Position obtenue, précision %1$.0f m</string>
+    <string name="new_report_location_unavailable">Position indisponible, vous pouvez continuer sans</string>
+    <string name="new_report_camera_permission_rationale">L\'application a besoin de l\'autorisation caméra pour prendre des photos et vidéos</string>
+    <string name="new_report_location_permission_rationale">L\'application a besoin de l\'autorisation de localisation pour géolocaliser le signalement</string>
+    <string name="new_report_grant_permission">Autoriser</string>
+
+    <string name="new_report_step5_title">Résumé</string>
+    <string name="new_report_summary_douar">Douar</string>
+    <string name="new_report_summary_problem">Type de problème</string>
+    <string name="new_report_summary_people">Personnes concernées</string>
+    <string name="new_report_summary_media_count">Fichiers joints : %1$d</string>
+    <string name="new_report_confirm_save">Confirmer et enregistrer</string>
+    <string name="new_report_save_dialog_title">Confirmer l\'enregistrement</string>
+    <string name="new_report_save_dialog_message">Voulez-vous enregistrer ce signalement ? Il sera envoyé automatiquement dès qu\'une connexion sera disponible</string>
 </resources>

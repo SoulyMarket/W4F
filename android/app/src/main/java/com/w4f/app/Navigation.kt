@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.w4f.app.ui.home.HomeScreen
 import com.w4f.app.ui.login.LoginScreen
+import com.w4f.app.ui.newreport.NewReportScreen
 
 @Composable
 fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
@@ -39,6 +40,14 @@ fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
               backStack.clear()
               backStack.add(Login)
             },
+            onNewReportClick = { backStack.add(NewReport) },
+            modifier = Modifier.safeDrawingPadding().padding(16.dp),
+          )
+        }
+        entry<NewReport> {
+          NewReportScreen(
+            onDone = { backStack.removeLastOrNull() },
+            onCancel = { backStack.removeLastOrNull() },
             modifier = Modifier.safeDrawingPadding().padding(16.dp),
           )
         }

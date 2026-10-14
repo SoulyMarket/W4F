@@ -6,3 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object Login : NavKey
 
 @Serializable data object Home : NavKey
+
+@Serializable data object NewReport : NavKey

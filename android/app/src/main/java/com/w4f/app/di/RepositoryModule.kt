@@ -2,6 +2,8 @@ package com.w4f.app.di
 
 import com.w4f.app.data.local.EncryptedTokenStore
 import com.w4f.app.data.local.TokenStore
+import com.w4f.app.data.location.DefaultLocationClient
+import com.w4f.app.data.location.LocationClient
 import com.w4f.app.data.repository.AuthRepository
 import com.w4f.app.data.repository.DefaultAuthRepository
 import com.w4f.app.data.repository.DefaultDouarRepository
@@ -27,4 +29,6 @@ abstract class RepositoryModule {
   @Binds
   @Singleton
   abstract fun bindReportRepository(impl: DefaultReportRepository): ReportRepository
+
+  @Binds @Singleton abstract fun bindLocationClient(impl: DefaultLocationClient): LocationClient
 }
