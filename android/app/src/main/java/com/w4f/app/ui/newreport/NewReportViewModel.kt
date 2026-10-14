@@ -6,7 +6,6 @@ import com.w4f.app.data.location.CapturedLocation
 import com.w4f.app.data.location.LocationClient
 import com.w4f.app.data.media.MediaCompressor
 import com.w4f.app.data.media.MediaFileStore
-import com.w4f.app.data.repository.AuthRepository
 import com.w4f.app.data.repository.DouarRepository
 import com.w4f.app.data.repository.ReportRepository
 import com.w4f.app.domain.model.Douar
@@ -108,7 +107,6 @@ data class NewReportUiState(
 class NewReportViewModel
 @Inject
 constructor(
-  private val authRepository: AuthRepository,
   private val douarRepository: DouarRepository,
   private val reportRepository: ReportRepository,
   private val locationClient: LocationClient,
@@ -119,16 +117,10 @@ constructor(
   private val _uiState = MutableStateFlow(NewReportUiState())
   val uiState: StateFlow<NewReportUiState> = _uiState.asStateFlow()
 
-  private var communeIds: List<String> = emptyList()
   private var douarSearchJob: Job? = null
 
   init {
-    viewModelScope.launch {
-      authRepository.currentUser().onSuccess { user ->
-        communeIds = user.territories.map { it.id }
-        runDouarSearch("")
-      }
-    }
+    runDouarSearch("")
   }
 
   fun onDouarQueryChange(query: String) {
@@ -140,7 +132,7 @@ constructor(
     douarSearchJob?.cancel()
     douarSearchJob =
       viewModelScope.launch {
-        douarRepository.search(communeIds, query).collect { results ->
+        douarRepository.search(query).collect { results ->
           _uiState.update { it.copy(douarResults = results) }
         }
       }

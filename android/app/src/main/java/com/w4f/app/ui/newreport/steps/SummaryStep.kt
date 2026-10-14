@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.w4f.app.R
+import com.w4f.app.ui.common.labelRes
 import com.w4f.app.ui.newreport.NewReportUiState
 
 /** Section 8, step 5 — "ملخص": summary + confirmation dialog before saving.
@@ -31,7 +32,10 @@ fun SummaryStep(state: NewReportUiState, onConfirmSave: () -> Unit) {
     Text(text = stringResource(R.string.new_report_step5_title), style = MaterialTheme.typography.titleMedium)
 
     SummaryRow(R.string.new_report_summary_douar, state.selectedDouar?.nameAr ?: "")
-    SummaryRow(R.string.new_report_summary_problem, state.problemType?.name ?: "")
+    SummaryRow(
+      R.string.new_report_summary_problem,
+      state.problemType?.let { stringResource(it.labelRes()) } ?: "",
+    )
     SummaryRow(
       R.string.new_report_summary_people,
       state.affectedPeople.ifBlank { "0" },

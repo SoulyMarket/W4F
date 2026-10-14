@@ -7,13 +7,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 interface DouarRepository {
-  /** Section 8's "الدوار" step: searchable, pre-filtered to the moqaddem's
-   * own territory. Reads only from the local cache — populated by
-   * `/sync/pull` (step 2.4), never fetched directly here. */
-  fun search(communeIds: List<String>, query: String): Flow<List<Douar>>
+  /** Section 8's "الدوار" step: searchable, scoped to the moqaddem's own
+   * territory by construction — `/sync/pull` only ever returns douars the
+   * signed-in moqaddem is allowed to see (server-side province→commune
+   * resolution), so the local cache never needs a second, client-side
+   * territory filter on top. */
+  fun search(query: String): Flow<List<Douar>>
 }
 
 class DefaultDouarRepository @Inject constructor(private val dao: DouarDao) : DouarRepository {
-  override fun search(communeIds: List<String>, query: String): Flow<List<Douar>> =
-    dao.search(communeIds, query).map { entities -> entities.map { it.toDomain() } }
+  override fun search(query: String): Flow<List<Douar>> =
+    dao.search(query).map { entities -> entities.map { it.toDomain() } }
 }

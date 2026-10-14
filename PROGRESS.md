@@ -820,4 +820,110 @@ scheduling, the real presigned-upload round-trip, and the 401-refresh path
 all need that before they can be called done, not just "compiles and the
 repository logic is unit-tested."
 
+### On-device verification pass (steps 2.2–2.4) — six real bugs found
+
+MSI App Player came back up this session. Rebuilt and ran the full app on
+it for the first time since step 2.2's initial smoke test, end to end:
+login → Home dossier list/sync bar → full "تبليغ جديد" stepper (douar
+search, problem chips, numbers, GPS capture, camera) → save → push → the
+new report reappearing in the dossier list as synced. Confirmed against
+the real backend afterward (`GET /reports`) that the pushed report's
+fields, GPS coordinates, and `status: submitted` all matched exactly what
+was entered on the phone. **None of this had ever run outside a unit test
+before** — six real bugs turned up, every one of them exactly the kind
+unit/Robolectric tests structurally cannot catch:
+
+1. **SQLCipher native library never loaded.** `net.zetetic:sqlcipher-android`
+   doesn't load `libsqlcipher.so` on class init — `nativeOpen()` and every
+   other native method failed with "No implementation found" the instant
+   Room tried to open the database, crashing on first launch. Fixed with an
+   explicit `System.loadLibrary("sqlcipher")` in `DatabaseModule` before
+   `Room.databaseBuilder(...).build()`. Found by reading the actual
+   zetetic/sqlcipher-android README usage pattern (via web search) after
+   the stack trace alone didn't make the fix obvious — Robolectric never
+   touches real JNI, so this was invisible until now.
+2. **Cleartext HTTP blocked by Android's default network security
+   policy** (API 28+) — a *second*, previously-hidden blocker behind the
+   firewall issue from step 2.2: `UnknownServiceException: CLEARTEXT
+   communication to 10.0.2.2 not permitted`. The firewall rule alone wasn't
+   enough; cleartext is blocked client-side before any network I/O even
+   starts. Fixed with a debug-build-only `network_security_config.xml`
+   (`src/debug/`, allowing cleartext only to `10.0.2.2`/`localhost`/
+   `127.0.0.1`) referenced from a `src/debug/AndroidManifest.xml` overlay —
+   release keeps zero exceptions and stays HTTPS-only by construction,
+   since the override only merges into debug builds.
+3. **The step-2.2 firewall rule had never actually been applied** — `netsh
+   advfirewall firewall show rule name="W4F Dev API"` found no matching
+   rule despite the session believing it was done; the user re-ran
+   `New-NetFirewallRule` this session and it stuck. Confirmed the backend
+   was genuinely reachable first via `nc` from inside the emulator (raw
+   HTTP request over the actual port) before trusting the app's own error
+   message, since the two blockers above were stacked and either one alone
+   would show the same generic "تعذر الاتصال بالخادم" message.
+4. **The seeded moqaddem's territory assignment is province-level, not
+   commune-level** — and `NewReportViewModel`'s douar search filtered the
+   local Room cache by `user.territories.map { it.id }` as if those were
+   always commune ids, so `WHERE communeId IN (:communeIds)` never matched
+   anything; "الدوار" search silently stayed empty forever. Root cause
+   wasn't just the Android code: the PROGRESS.md ruling that added this
+   filter back in step 2.3 ("a moqaddem's own assignment is realistically
+   always their one commune") turned out to be wrong given the actual seed
+   data, which assigns the demo moqaddem to the *province* — the exact
+   province→commune case the backend's own `territory_scope.py` exists to
+   resolve. The real fix is simpler than the bug: `/sync/pull` already only
+   ever returns douars the signed-in moqaddem can see (server-side
+   resolution), so the client-side filter was pure redundant surface area
+   that happened to be wrong — removed it entirely rather than trying to
+   mirror the backend's descendant-resolution logic on-device.
+   `DouarDao.search()`/`DouarRepository.search()` dropped the `communeIds`
+   parameter; `NewReportViewModel` no longer depends on `AuthRepository` at
+   all as a result.
+5. **A fresh login has nothing to show a "sync now" button for.** The sync
+   status bar only showed "مزامنة الآن" when something was locally pending,
+   but a brand-new install has zero pending reports (nothing to push) and
+   therefore no way to trigger the *pull* that would populate reference
+   data (douars) — stuck until the 15-minute periodic tick. Fixed two ways:
+   `HomeViewModel.init` now kicks `syncScheduler.syncNow()` on every Home
+   entry (cheap and idempotent — `syncNow()` replaces any in-flight
+   request), and the sync-now button is now always visible, not
+   conditional on `pendingCount > 0` (section 8 screen 7 treats "sync now"
+   as a standing action, not a pending-only one anyway).
+6. **An unhandled CameraX init failure destabilized the whole activity.**
+   BlueStacks' virtual camera HAL returns malformed `StreamConfigurationMap`
+   data (`format 0xf375eda0 was not defined`), which made CameraX's own
+   internal init-retry loop unstable enough that tapping "التقاط صورة"
+   eventually tore down `MainActivity` (`Activity destroy timeout`) rather
+   than crashing cleanly with a catchable exception — the process survived,
+   relaunching was fine, but the Evidence step was unusable and gave no
+   indication why. Not assumed to be BlueStacks-only: real low-end or
+   unusual devices can fail camera init too, and section 8 already commits
+   to "never block data entry" for exactly this kind of hardware gap.
+   Wrapped the whole bind-to-lifecycle block in try/catch, surfacing
+   `new_report_camera_unavailable` ("الكاميرا غير متوفرة على هذا الجهاز،
+   يمكن المتابعة بدون صور") and skipping the preview/capture UI entirely on
+   failure, confirmed fixed by reproducing the same tap afterward with no
+   crash. `PackageManager.hasSystemFeature` wasn't a usable guard here —
+   BlueStacks reports full camera feature flags (`pm list features` shows
+   `android.hardware.camera.any` etc.) despite the HAL being broken, so
+   only an actual bind attempt reveals the failure.
+
+Also caught and fixed in the same pass: the summary step
+(`SummaryStep.kt`) showed the raw Kotlin enum name (`NO_WATER`) instead of
+the localized label for "نوع المشكل" — missed the shared
+`ui/common/ReportEnumLabels.kt` helper `ProblemStep.kt` already used.
+
+51 Android unit tests (was 50 — `DouarDaoTest`/`NewReportViewModelTest`
+updated for the dropped `communeIds` parameter, `HomeViewModelTest` gained
+a case for the init-triggers-sync behavior) + 194 backend tests, all
+passing; `:app:assembleDebug` succeeds. **This is the first time the full
+Phase 2 pipeline (steps 2.2–2.4) has been confirmed working end-to-end on
+a real device against the real backend**, not just unit-tested in
+isolation — login, dossier list, the full report stepper, GPS, graceful
+camera degradation, local save, push sync, and the backend round-trip all
+verified together in one session. Still outstanding: video capture
+specifically (camera being unavailable in this environment means only the
+graceful-failure path was exercised, not an actual recording), and a real
+Wi-Fi-constrained `MediaUploadWorker` run with real media bytes (no media
+was ever captured in this session to upload).
+
 Phase 3 (Web), Phase 4 (AI) — not started.

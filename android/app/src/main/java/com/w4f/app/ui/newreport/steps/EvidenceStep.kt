@@ -177,30 +177,51 @@ private fun CameraSection(
   var activeRecording by remember { mutableStateOf<Recording?>(null) }
   var isRecording by remember { mutableStateOf(false) }
   var recordedSeconds by remember { mutableStateOf(0) }
+  // Found on-device: a camera HAL that reports malformed stream config
+  // data makes CameraX's own init retry loop unstable enough to destabilize
+  // the activity if left unhandled — this must never propagate uncaught,
+  // and the moqaddem must still be able to continue without a working
+  // camera (section 8: never block data entry).
+  var cameraError by remember { mutableStateOf(false) }
 
   DisposableEffect(mode, lifecycleOwner) {
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
     val listener = Runnable {
-      val cameraProvider = cameraProviderFuture.get()
-      val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
-      cameraProvider.unbindAll()
+      try {
+        val cameraProvider = cameraProviderFuture.get()
+        val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
+        cameraProvider.unbindAll()
 
-      if (mode == CaptureMode.PHOTO) {
-        val capture = ImageCapture.Builder().build()
-        imageCapture = capture
-        videoCapture = null
-        cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
-      } else {
-        val recorder =
-          Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.SD)).build()
-        val capture = VideoCapture.withOutput(recorder)
-        videoCapture = capture
+        if (mode == CaptureMode.PHOTO) {
+          val capture = ImageCapture.Builder().build()
+          cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
+          imageCapture = capture
+          videoCapture = null
+        } else {
+          val recorder =
+            Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.SD)).build()
+          val capture = VideoCapture.withOutput(recorder)
+          cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
+          videoCapture = capture
+          imageCapture = null
+        }
+        cameraError = false
+      } catch (_: Exception) {
+        cameraError = true
         imageCapture = null
-        cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
+        videoCapture = null
       }
     }
     cameraProviderFuture.addListener(listener, ContextCompat.getMainExecutor(context))
     onDispose { runCatching { cameraProviderFuture.get().unbindAll() } }
+  }
+
+  if (cameraError) {
+    Text(
+      text = stringResource(R.string.new_report_camera_unavailable),
+      modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+    )
+    return
   }
 
   AndroidView(

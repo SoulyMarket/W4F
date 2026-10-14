@@ -25,6 +25,12 @@ object DatabaseModule {
     @ApplicationContext context: Context,
     passphraseStore: DatabasePassphraseStore,
   ): AppDatabase {
+    // net.zetetic:sqlcipher-android doesn't load its native lib on class
+    // init — nativeOpen() et al. fail with "No implementation found" until
+    // this runs at least once (found on-device; nothing in a JVM/Robolectric
+    // test exercises actual JNI linkage, so this was invisible until now).
+    System.loadLibrary("sqlcipher")
+
     val passphrase = passphraseStore.getOrCreatePassphrase()
     return Room.databaseBuilder(context, AppDatabase::class.java, "w4f.db")
       .openHelperFactory(SupportOpenHelperFactory(passphrase))

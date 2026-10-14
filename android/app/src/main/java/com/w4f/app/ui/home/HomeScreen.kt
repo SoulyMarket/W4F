@@ -98,9 +98,11 @@ private fun SyncStatusBar(
           SyncStatus.OFFLINE -> stringResource(R.string.home_sync_offline)
         }
       Text(text = label, modifier = Modifier.weight(1f))
-      if (status != SyncStatus.ALL_SYNCED) {
-        TextButton(onClick = onSyncNowClick) { Text(stringResource(R.string.home_sync_now)) }
-      }
+      // Always available, not just when something is pending (section 8,
+      // screen 7: "sync now" is a standing action) — also the only way to
+      // trigger the first-ever pull on a fresh login before anything local
+      // is pending.
+      TextButton(onClick = onSyncNowClick) { Text(stringResource(R.string.home_sync_now)) }
     }
   }
 }

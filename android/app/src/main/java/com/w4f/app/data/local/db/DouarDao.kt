@@ -10,16 +10,21 @@ import kotlinx.coroutines.flow.Flow
 interface DouarDao {
   @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(douars: List<DouarEntity>)
 
-  /** Pre-filtered to the moqaddem's territory (section 8, "الدوار" step) —
-   * `communeIds` is the caller's accessible set, resolved the same way the
-   * backend resolves it server-side. Matches either the Arabic or French
-   * name, since the moqaddem may type either (section 8). */
+  /** Section 8, "الدوار" step: searchable, pre-filtered to the moqaddem's
+   * territory — but that filtering already happened server-side in
+   * `/sync/pull` (province→commune descendant resolution lives there, see
+   * the backend's `territory_scope.py`), so every row that ever reaches
+   * this table already belongs to the signed-in moqaddem. Re-filtering
+   * here by a client-resolved commune id was a real, confirmed-on-device
+   * bug: a province-level assignment (the seeded moqaddem's own territory)
+   * never matched a douar's commune-level id, so results were silently
+   * empty even though the data was there. Matches either the Arabic or
+   * French name, since the moqaddem may type either. */
   @Query(
-    "SELECT * FROM douars WHERE communeId IN (:communeIds) " +
-      "AND (nameAr LIKE '%' || :query || '%' OR nameFr LIKE '%' || :query || '%') " +
+    "SELECT * FROM douars WHERE nameAr LIKE '%' || :query || '%' OR nameFr LIKE '%' || :query || '%' " +
       "ORDER BY nameAr"
   )
-  fun search(communeIds: List<String>, query: String): Flow<List<DouarEntity>>
+  fun search(query: String): Flow<List<DouarEntity>>
 
   @Query("SELECT * FROM douars WHERE id = :id") suspend fun getById(id: String): DouarEntity?
 }

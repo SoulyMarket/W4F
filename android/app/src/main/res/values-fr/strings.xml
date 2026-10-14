@@ -102,6 +102,7 @@
     <string name="new_report_camera_permission_rationale">L\'application a besoin de l\'autorisation caméra pour prendre des photos et vidéos</string>
     <string name="new_report_location_permission_rationale">L\'application a besoin de l\'autorisation de localisation pour géolocaliser le signalement</string>
     <string name="new_report_grant_permission">Autoriser</string>
+    <string name="new_report_camera_unavailable">Caméra indisponible sur cet appareil, vous pouvez continuer sans photo</string>
 
     <string name="new_report_step5_title">Résumé</string>
     <string name="new_report_summary_douar">Douar</string>

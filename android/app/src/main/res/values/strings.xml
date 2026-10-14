@@ -103,6 +103,7 @@
     <string name="new_report_camera_permission_rationale">يحتاج التطبيق إذن الكاميرا لالتقاط الصور والفيديو</string>
     <string name="new_report_location_permission_rationale">يحتاج التطبيق إذن الموقع لتحديد إحداثيات البلاغ</string>
     <string name="new_report_grant_permission">منح الإذن</string>
+    <string name="new_report_camera_unavailable">الكاميرا غير متوفرة على هذا الجهاز، يمكن المتابعة بدون صور</string>
 
     <string name="new_report_step5_title">ملخص</string>
     <string name="new_report_summary_douar">الدوار</string>

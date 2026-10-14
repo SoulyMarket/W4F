@@ -32,7 +32,7 @@ class DouarDaoTest {
     DouarEntity(id = id, nameAr = nameAr, nameFr = nameFr, communeId = communeId, lat = 31.0, lon = -7.0)
 
   @Test
-  fun `search is scoped to the given commune ids`() = runTest {
+  fun `search returns every locally cached douar when the query is blank`() = runTest {
     dao.upsertAll(
       listOf(
         douar("d1", "دوار الف", "Douar Alpha", "commune-1"),
@@ -40,9 +40,12 @@ class DouarDaoTest {
       )
     )
 
-    dao.search(communeIds = listOf("commune-1"), query = "").test {
+    // No client-side territory filter — /sync/pull already only ever
+    // caches douars the signed-in moqaddem can see (see DouarDao.search's
+    // doc comment for the bug this replaced).
+    dao.search(query = "").test {
       val result = awaitItem()
-      assertEquals(listOf("d1"), result.map { it.id })
+      assertEquals(listOf("d1", "d2"), result.map { it.id })
     }
   }
 
@@ -55,11 +58,11 @@ class DouarDaoTest {
       )
     )
 
-    dao.search(communeIds = listOf("commune-1"), query = "Beta").test {
+    dao.search(query = "Beta").test {
       assertEquals(listOf("d2"), awaitItem().map { it.id })
     }
 
-    dao.search(communeIds = listOf("commune-1"), query = "الف").test {
+    dao.search(query = "الف").test {
       assertEquals(listOf("d1"), awaitItem().map { it.id })
     }
   }

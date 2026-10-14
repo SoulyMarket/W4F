@@ -26,6 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -133,11 +134,26 @@ class HomeViewModelTest {
   }
 
   @Test
+  fun `entering the home screen kicks an immediate sync`() = runTest {
+    whenever(reportRepository.observeReports()).thenReturn(flowOf(emptyList()))
+    whenever(networkMonitor.isConnected).thenReturn(flowOf(true))
+
+    viewModel()
+    advanceUntilIdle()
+
+    // A fresh login has nothing pending yet (no reports to push), so this
+    // is the only thing that would ever pull reference data (douars)
+    // without waiting on the 15-minute periodic tick.
+    verify(syncScheduler, atLeastOnce()).syncNow()
+  }
+
+  @Test
   fun `sync now delegates to the scheduler`() = runTest {
     whenever(reportRepository.observeReports()).thenReturn(flowOf(emptyList()))
     whenever(networkMonitor.isConnected).thenReturn(flowOf(true))
     val viewModel = viewModel()
     advanceUntilIdle()
+    org.mockito.kotlin.clearInvocations(syncScheduler)
 
     viewModel.onSyncNowClick()
 

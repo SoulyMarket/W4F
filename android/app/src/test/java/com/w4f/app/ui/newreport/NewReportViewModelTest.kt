@@ -3,10 +3,8 @@ package com.w4f.app.ui.newreport
 import com.w4f.app.data.location.CapturedLocation
 import com.w4f.app.data.location.LocationClient
 import com.w4f.app.data.media.MediaFileStore
-import com.w4f.app.data.repository.AuthRepository
 import com.w4f.app.data.repository.DouarRepository
 import com.w4f.app.data.repository.ReportRepository
-import com.w4f.app.domain.model.AppLanguage
 import com.w4f.app.domain.model.Douar
 import com.w4f.app.domain.model.InterruptionFrequency
 import com.w4f.app.domain.model.MediaKind
@@ -14,17 +12,12 @@ import com.w4f.app.domain.model.ProblemType
 import com.w4f.app.domain.model.Report
 import com.w4f.app.domain.model.ReportMedia
 import com.w4f.app.domain.model.SeverityLevel
-import com.w4f.app.domain.model.Territory
-import com.w4f.app.domain.model.User
-import com.w4f.app.domain.model.UserRole
 import com.w4f.app.domain.model.WaterSource
 import com.w4f.app.sync.SyncScheduler
 import com.w4f.app.testutil.MainDispatcherRule
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -35,7 +28,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -47,17 +39,7 @@ class NewReportViewModelTest {
   @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
   private val douar = Douar(id = "d1", nameAr = "دوار", nameFr = "Douar", communeId = "c1", lat = 31.0, lon = -7.0)
-  private val user =
-    User(
-      id = "u1",
-      fullName = "Moqaddem",
-      email = "moqaddem@w4f.ma",
-      role = UserRole.MOQADDEM,
-      preferredLanguage = AppLanguage.AR,
-      territories = listOf(Territory(id = "c1", nameAr = "ج", nameFr = "C", level = "commune")),
-    )
 
-  private val authRepository: AuthRepository = mock { on { hasSession } doReturn MutableStateFlow(true) }
   private val douarRepository: DouarRepository = mock()
   private val reportRepository: ReportRepository = mock()
   private val locationClient: LocationClient = mock()
@@ -66,38 +48,30 @@ class NewReportViewModelTest {
 
   @Before
   fun setUp() {
-    runBlocking { whenever(authRepository.currentUser()).thenReturn(Result.success(user)) }
-    whenever(douarRepository.search(any(), any())).thenReturn(flowOf(listOf(douar)))
+    whenever(douarRepository.search(any())).thenReturn(flowOf(listOf(douar)))
   }
 
   private fun viewModel() =
-    NewReportViewModel(
-      authRepository,
-      douarRepository,
-      reportRepository,
-      locationClient,
-      mediaFileStore,
-      syncScheduler,
-    )
+    NewReportViewModel(douarRepository, reportRepository, locationClient, mediaFileStore, syncScheduler)
 
   @Test
-  fun `initial load resolves the moqaddem's own commune ids and pre-populates douars`() = runTest {
+  fun `initial load pre-populates douars from the local cache`() = runTest {
     val viewModel = viewModel()
     advanceUntilIdle()
 
     assertEquals(listOf(douar), viewModel.uiState.value.douarResults)
-    verify(douarRepository).search(listOf("c1"), "")
+    verify(douarRepository).search("")
   }
 
   @Test
-  fun `typing a query re-runs the search scoped to the same commune ids`() = runTest {
+  fun `typing a query re-runs the search`() = runTest {
     val viewModel = viewModel()
     advanceUntilIdle()
 
     viewModel.onDouarQueryChange("دوار")
     advanceUntilIdle()
 
-    verify(douarRepository).search(eq(listOf("c1")), eq("دوار"))
+    verify(douarRepository).search(eq("دوار"))
   }
 
   @Test

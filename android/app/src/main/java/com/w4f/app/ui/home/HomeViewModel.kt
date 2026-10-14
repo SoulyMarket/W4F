@@ -54,6 +54,13 @@ constructor(
         _uiState.update { it.copy(fullName = user.fullName) }
       }
     }
+    // Section 8 lists "on save / periodically / on sync now" as the sync
+    // triggers, but a fresh login has nothing pending to save yet — without
+    // this, reference data (douars) only ever arrives after the first
+    // periodic tick, up to 15 minutes later. Kicking a sync on every Home
+    // entry (not just first login) is cheap and idempotent (syncNow()
+    // replaces any in-flight request rather than stacking).
+    syncScheduler.syncNow()
     viewModelScope.launch {
       combine(reportRepository.observeReports(), networkMonitor.isConnected) { reports, connected ->
           val pendingCount =
