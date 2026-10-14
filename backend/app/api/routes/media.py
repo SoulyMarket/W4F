@@ -93,6 +93,55 @@ def create_upload_url(
     )
 
 
+@router.post("/{media_id}/refresh-upload-url", response_model=MediaUploadUrlOut)
+def refresh_upload_url(
+    media_id: uuid.UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_any),
+    settings: Settings = Depends(get_settings),
+) -> MediaUploadUrlOut:
+    """A presigned PUT URL expires in `UPLOAD_URL_EXPIRE_SECONDS` (15 min) —
+    short enough that the phone's Wi-Fi-only upload constraint (section 8)
+    can easily outlast it. Re-signs the *same* `object_key` a pending media
+    row already has rather than registering a new row, so a deferred
+    upload never has to go through `/upload-url` again (which would create
+    a duplicate `report_media` row)."""
+    lang = get_request_language(request)
+    scope = territory_scope_filter(Douar.commune_id, db, current_user)
+    media = (
+        db.query(ReportMedia)
+        .join(Report, ReportMedia.report_id == Report.id)
+        .join(Douar, Report.douar_id == Douar.id)
+        .filter(ReportMedia.id == media_id, scope)
+        .first()
+    )
+    if media is None:
+        raise ApiError(
+            status_code=status.HTTP_404_NOT_FOUND,
+            key="errors.not_found",
+            lang=lang,
+        )
+    if media.upload_status != UploadStatus.PENDING:
+        raise ApiError(
+            status_code=status.HTTP_409_CONFLICT,
+            key="errors.invalid_status_transition",
+            lang=lang,
+        )
+
+    client = get_s3_client(settings)
+    upload_url = generate_upload_url(
+        client, settings.minio_bucket, media.object_key, media.mime_type
+    )
+
+    return MediaUploadUrlOut(
+        media_id=media.id,
+        upload_url=upload_url,
+        object_key=media.object_key,
+        expires_in=UPLOAD_URL_EXPIRE_SECONDS,
+    )
+
+
 @router.post("/{media_id}/complete", response_model=MediaOut)
 def complete_upload(
     media_id: uuid.UUID,

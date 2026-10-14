@@ -82,9 +82,7 @@ def auth_headers(client, email):
 
 def test_upload_url_request_creates_pending_media_row(client, db_session, moto_s3_endpoint):
     douar, territory = make_douar_in_territory(db_session)
-    moqaddem = make_user(
-        db_session, UserRole.MOQADDEM, "moqaddem@example.com", territory=territory
-    )
+    moqaddem = make_user(db_session, UserRole.MOQADDEM, "moqaddem@example.com", territory=territory)
     report = make_report(db_session, douar, moqaddem)
     headers = auth_headers(client, "moqaddem@example.com")
 
@@ -252,6 +250,105 @@ def test_complete_rejects_sha256_mismatch(client, db_session, moto_s3_endpoint):
 
     media = db_session.get(ReportMedia, uuid.UUID(body["media_id"]))
     assert media.upload_status.value == "pending"
+
+
+def test_refresh_upload_url_reuses_the_same_object_key(client, db_session, moto_s3_endpoint):
+    douar, territory = make_douar_in_territory(db_session)
+    moqaddem = make_user(
+        db_session, UserRole.MOQADDEM, "moqaddem8@example.com", territory=territory
+    )
+    report = make_report(db_session, douar, moqaddem)
+    headers = auth_headers(client, "moqaddem8@example.com")
+
+    create_resp = client.post(
+        "/api/v1/media/upload-url",
+        json={
+            "report_id": str(report.id),
+            "kind": "photo",
+            "mime_type": "image/jpeg",
+            "size_bytes": 1024,
+        },
+        headers=headers,
+    )
+    media_id = create_resp.json()["media_id"]
+    original_object_key = create_resp.json()["object_key"]
+
+    refresh_resp = client.post(f"/api/v1/media/{media_id}/refresh-upload-url", headers=headers)
+    assert refresh_resp.status_code == 200
+    body = refresh_resp.json()
+    assert body["media_id"] == media_id
+    assert body["object_key"] == original_object_key
+
+    # The refreshed URL actually works, not just a differently-shaped string.
+    content = b"uploaded via the refreshed url"
+    put_resp = requests.put(
+        body["upload_url"], data=content, headers={"Content-Type": "image/jpeg"}
+    )
+    assert put_resp.status_code == 200
+
+    media = db_session.get(ReportMedia, uuid.UUID(media_id))
+    assert media.upload_status.value == "pending"
+
+
+def test_refresh_upload_url_rejects_an_already_uploaded_media(client, db_session, moto_s3_endpoint):
+    douar, territory = make_douar_in_territory(db_session)
+    moqaddem = make_user(
+        db_session, UserRole.MOQADDEM, "moqaddem9@example.com", territory=territory
+    )
+    report = make_report(db_session, douar, moqaddem)
+    headers = auth_headers(client, "moqaddem9@example.com")
+
+    content = b"already uploaded bytes"
+    sha256 = hashlib.sha256(content).hexdigest()
+    create_resp = client.post(
+        "/api/v1/media/upload-url",
+        json={
+            "report_id": str(report.id),
+            "kind": "photo",
+            "mime_type": "image/jpeg",
+            "size_bytes": len(content),
+        },
+        headers=headers,
+    )
+    body = create_resp.json()
+    requests.put(body["upload_url"], data=content, headers={"Content-Type": "image/jpeg"})
+    client.post(
+        f"/api/v1/media/{body['media_id']}/complete", json={"sha256": sha256}, headers=headers
+    )
+
+    refresh_resp = client.post(
+        f"/api/v1/media/{body['media_id']}/refresh-upload-url", headers=headers
+    )
+    assert refresh_resp.status_code == 409
+
+
+def test_refresh_upload_url_outside_territory_returns_404(client, db_session, moto_s3_endpoint):
+    douar, territory = make_douar_in_territory(db_session)
+    other_territory = Territory(name_ar="ب", name_fr="Other", level=TerritoryLevel.COMMUNE)
+    db_session.add(other_territory)
+    db_session.flush()
+    moqaddem = make_user(
+        db_session, UserRole.MOQADDEM, "moqaddem10@example.com", territory=territory
+    )
+    make_user(db_session, UserRole.EXPERT, "expert10@example.com", territory=other_territory)
+    report = make_report(db_session, douar, moqaddem)
+    headers = auth_headers(client, "moqaddem10@example.com")
+
+    create_resp = client.post(
+        "/api/v1/media/upload-url",
+        json={
+            "report_id": str(report.id),
+            "kind": "photo",
+            "mime_type": "image/jpeg",
+            "size_bytes": 1024,
+        },
+        headers=headers,
+    )
+    media_id = create_resp.json()["media_id"]
+
+    other_headers = auth_headers(client, "expert10@example.com")
+    resp = client.post(f"/api/v1/media/{media_id}/refresh-upload-url", headers=other_headers)
+    assert resp.status_code == 404
 
 
 def test_complete_rejects_when_object_not_actually_uploaded(client, db_session, moto_s3_endpoint):
