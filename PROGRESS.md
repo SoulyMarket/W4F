@@ -515,4 +515,105 @@ settings before `adb` could do more than list the device (push/install/
 shell all failed with connection errors until then) — noted here in case
 reconnecting to the same emulator in a future session hits the same wall.
 
+### Phase 1 gap found and fixed: step 2.1 (Sync API) had been skipped
+
+Resuming after step 2.2, section 9's own order was re-checked against what
+actually exists — and step **2.1 — Sync API** (`/sync/push`, `/sync/pull`,
+FCM sender service) had never been built: work went straight from 1.10 to
+the Android scaffold (2.2). Device-token registration (`POST /devices`)
+*was* already done back in 1.10, so only the two sync endpoints and the
+FCM sender were actually missing. Built now, out of its proper order but
+before any more Android work, since step 2.4 (sync workers) depends on it
+and there's no reason to let the gap compound further.
+
+**`POST /sync/push`** (moqaddem-only) — the *only* way a report is ever
+created; there is deliberately no `POST /reports` (`reports.id` is
+client-generated specifically so this push can be idempotent, section 4).
+Per report item: creates if the id is new (territory-checked: the douar
+must be in the moqaddem's accessible set, else `rejected`/
+`errors.not_found`, same 404-not-403 convention as everywhere else),
+compares field-by-field if it already exists (`unchanged` if identical,
+`updated` + `version += 1` + priority recompute if not), and enforces
+section 5's conflict rule verbatim: once `status` has moved past
+`submitted`, the push is `rejected` with `errors.sync_conflict` — "the
+phone owns field data while submitted; server wins after review." A new
+report immediately gets its first `Priority` (`recompute_priority`, reused
+from 1.7/1.8) and triggers the `new_report` notification to **experts of
+the report's territory** — a new `notify_territory_experts()` in
+`app/services/notifications.py`, scoped via the same
+`get_accessible_territory_ids()` every other territory check uses (an
+expert is "of" a territory if it's in their accessible set, not just a
+direct assignment — a province-assigned expert covers its communes' new
+reports too, consistent with how province assignments work everywhere
+else). This was also the first thing to ever actually trigger
+`NotificationType.NEW_REPORT`, defined back in step 1.2 but unused until
+now since there was no report-creation endpoint before this.
+
+**Ruling: "+ media metadata" in the push body.** The spec's
+`POST /sync/push — body: list of reports (with client UUIDs) + media
+metadata` doesn't fully specify the shape. Rather than inventing a second,
+client-id-keyed media table (which would need a migration, since
+`report_media.id` has a server-only default), each pushed report carries an
+optional `media: [{kind, mime_type, size_bytes, captured_at}]` list that
+reuses the *exact* existing creation path from `/media/upload-url`
+(server-generated id and `object_key`, presigned PUT URL returned
+immediately) — just batched into the same call, since the client is
+already batching everything else here. Idempotency for media (a
+WorkManager retry resending the same push) is keyed on the natural tuple
+`(report_id, kind, mime_type, size_bytes, captured_at)` rather than a
+client id: a true retry resends the identical `captured_at`, so this still
+dedupes correctly without a schema change. Verified: pushing the same
+media metadata twice registers exactly one `report_media` row and returns
+the same `media_id` both times.
+
+**`GET /sync/pull?since=<cursor>`** (moqaddem-only) — `cursor` is an ISO
+timestamp captured *before* any query runs (a row written mid-pull is
+re-delivered next time rather than silently missed — harmless for a
+read-only sync target, unlike a gap). Returns, filtered to the moqaddem's
+own accessible territory/own reports: douars, reports (with latest score,
+reusing the exact same latest-priority-per-report join `GET /reports`
+already uses — promoted from `reports.py`'s private
+`_latest_priority_subquery`/`_report_to_out` to public
+`latest_priority_subquery`/`report_to_out` so both endpoints share one
+implementation instead of two that could drift), priorities, validations,
+projects, project updates, and notifications (reusing the same
+`app.i18n`-localized message rendering `GET /notifications` uses). Omitting
+`since` does a full first-sync snapshot.
+
+**FCM sender** (`app/services/fcm.py`) — `send_push(settings, tokens,
+title, body, data)`, a no-op (just logs) whenever
+`settings.fcm_credentials_json` is empty, which is every environment this
+has actually run in so far (no real Firebase project exists here). Built
+on `firebase-admin` (added as a real dependency, not dev-only — pulls in
+`google-cloud-*`/`grpcio` transitively, a genuinely heavy addition for a
+path that can't be exercised against the real service in this environment
+either way, but it's what section 2's stack names and hand-rolling FCM's
+OAuth2 service-account flow instead would be more code and more fragile
+than depending on the standard library for it). Uses `messaging.Message`
+per-token + `send_each()` rather than the newer `MulticastMessage`/
+`send_each_for_multicast` — those now push toward Firebase **Installation
+IDs** (`fids`), a different identifier namespace than the classic FCM
+registration tokens this schema actually stores
+(`device_tokens.fcm_token`, section 4); `.token`/`send_each()` triggers a
+cosmetic deprecation warning that's suppressed in `pyproject.toml` with a
+comment explaining why, not fixed by switching to the wrong ID type.
+Tested with the real `firebase_admin.messaging`/`credentials` call sites
+mocked (constructing a real `credentials.Certificate` needs an actual
+valid PEM key, which no test fixture has) — verifies the no-op fallback
+needs no mocking at all, and the configured path calls the real API with a
+correctly shaped message. **Deferred to step 2.5, not an oversight**: wiring
+`send_push` into the existing notification triggers (`notify_user`/
+`notify_all_managers`/`notify_territory_experts`) — the Android side has no
+Firebase project/`google-services.json` yet either, so there's nothing to
+receive a real push against until that step sets it up.
+
+8 new tests (6 sync — create/idempotent-unchanged/update-bumps-version/
+conflict-rejected/cross-territory-rejected/role-check, plus media
+idempotency and pull scoping — call it 8 total across `test_sync.py`) + 4
+FCM tests, all passing against the real Postgres instance (and a live
+smoke test over real HTTP: logged in as the seeded moqaddem, pushed a new
+report twice — `created` then `unchanged` — pulled it back with its score,
+and confirmed the seeded expert actually received the `new_report`
+notification). 191 tests total.
+
 Phase 3 (Web), Phase 4 (AI) — not started.

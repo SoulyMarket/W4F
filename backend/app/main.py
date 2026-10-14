@@ -12,6 +12,7 @@ from app.api.routes import (
     projects,
     reports,
     scoring,
+    sync,
     territories,
     users,
     validations,
@@ -51,3 +52,4 @@ app.include_router(projects.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(media.router, prefix="/api/v1")
+app.include_router(sync.router, prefix="/api/v1")

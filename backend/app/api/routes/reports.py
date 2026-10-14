@@ -34,7 +34,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 _require_any = require_roles(*list(UserRole))
 
 
-def _report_to_out(report: Report, score: int | None = None) -> ReportOut:
+def report_to_out(report: Report, score: int | None = None) -> ReportOut:
     coords = latlon_from_point(report.location)
     return ReportOut(
         id=report.id,
@@ -69,7 +69,7 @@ def _report_to_out(report: Report, score: int | None = None) -> ReportOut:
     )
 
 
-def _latest_priority_subquery(db: Session):
+def latest_priority_subquery(db: Session):
     latest = (
         db.query(Priority.report_id, func.max(Priority.computed_at).label("computed_at"))
         .group_by(Priority.report_id)
@@ -115,7 +115,7 @@ def list_reports(
     if date_to is not None:
         query = query.filter(Report.problem_started_on <= date_to)
 
-    latest = _latest_priority_subquery(db)
+    latest = latest_priority_subquery(db)
     query = query.outerjoin(latest, latest.c.report_id == Report.id).outerjoin(
         Priority,
         (Priority.report_id == latest.c.report_id) & (Priority.computed_at == latest.c.computed_at),
@@ -135,7 +135,7 @@ def list_reports(
         query = query.order_by(Report.collected_at.desc())
 
     rows = query.offset((page - 1) * page_size).limit(page_size).all()
-    items = [_report_to_out(report, score) for report, score in rows]
+    items = [report_to_out(report, score) for report, score in rows]
     return ReportListOut(items=items, total=total, page=page, page_size=page_size)
 
 
@@ -185,7 +185,7 @@ def get_report(
         .first()
     )
 
-    base = _report_to_out(report, latest_priority.score if latest_priority else None)
+    base = report_to_out(report, latest_priority.score if latest_priority else None)
     return ReportDetailOut(
         **base.model_dump(),
         media=media_out,
