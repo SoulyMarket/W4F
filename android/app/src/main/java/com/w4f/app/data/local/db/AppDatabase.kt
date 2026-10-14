@@ -5,7 +5,10 @@ import androidx.room.RoomDatabase
 
 @Database(
   entities = [DouarEntity::class, ReportEntity::class, ReportMediaEntity::class],
-  version = 1,
+  // v2 added ReportEntity.serverStatus/serverScore (step 2.4's pull sync) —
+  // destructive is acceptable pre-release: this is a cache/outbox, not the
+  // system of record, and no real device has synced data yet.
+  version = 2,
   exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

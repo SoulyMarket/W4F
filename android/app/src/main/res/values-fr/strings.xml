@@ -21,6 +21,12 @@
     <string name="home_sync_all_synced">Tout est synchronisé</string>
     <string name="home_sync_pending">%1$d en attente</string>
     <string name="home_sync_offline">Hors ligne</string>
+    <string name="home_sync_now">Synchroniser maintenant</string>
+    <string name="home_dossiers_empty">Aucun signalement pour l\'instant</string>
+    <string name="dossier_status_pending">En cours d\'envoi</string>
+    <string name="dossier_status_failed">Échec de l\'envoi, nouvelle tentative prévue</string>
+    <string name="dossier_status_rejected">Rejeté</string>
+    <string name="dossier_status_synced">Envoyé</string>
 
     <!-- Paramètres -->
     <string name="settings_title">Paramètres</string>

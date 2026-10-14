@@ -3,6 +3,9 @@ package com.w4f.app.di
 import com.w4f.app.BuildConfig
 import com.w4f.app.data.local.TokenStore
 import com.w4f.app.data.remote.AuthApi
+import com.w4f.app.data.remote.MediaApi
+import com.w4f.app.data.remote.SyncApi
+import com.w4f.app.data.remote.TokenAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,10 +30,10 @@ object NetworkModule {
     isLenient = true
   }
 
-  /** Attaches the access token to every request. Does NOT handle refresh-on-
-   * 401 yet — see step 2.4 (sync workers), where a 401 mid-background-sync
-   * needs a real retry-after-refresh policy; a login screen can just send
-   * the user back to re-authenticate for now. */
+  /** Attaches the access token to every request; 401-handling (refresh +
+   * retry, step 2.4) is `TokenAuthenticator`'s job, attached separately
+   * below — an `Authenticator` runs only after a 401 comes back, whereas
+   * this `Interceptor` runs on every outgoing request. */
   @Provides
   @Singleton
   fun provideAuthInterceptor(tokenStore: TokenStore): Interceptor = Interceptor { chain ->
@@ -46,7 +49,7 @@ object NetworkModule {
 
   @Provides
   @Singleton
-  fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
+  fun provideOkHttpClient(authInterceptor: Interceptor, authenticator: TokenAuthenticator): OkHttpClient {
     val logging =
       HttpLoggingInterceptor().apply {
         // BODY logging would put request/response payloads (which can
@@ -55,7 +58,11 @@ object NetworkModule {
         // using BASIC rather than HEADERS/BODY level.
         level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
       }
-    return OkHttpClient.Builder().addInterceptor(authInterceptor).addInterceptor(logging).build()
+    return OkHttpClient.Builder()
+      .addInterceptor(authInterceptor)
+      .authenticator(authenticator)
+      .addInterceptor(logging)
+      .build()
   }
 
   @Provides
@@ -68,4 +75,8 @@ object NetworkModule {
       .build()
 
   @Provides @Singleton fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
+
+  @Provides @Singleton fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
+
+  @Provides @Singleton fun provideMediaApi(retrofit: Retrofit): MediaApi = retrofit.create(MediaApi::class.java)
 }

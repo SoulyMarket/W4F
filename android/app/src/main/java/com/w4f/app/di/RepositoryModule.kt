@@ -8,8 +8,10 @@ import com.w4f.app.data.repository.AuthRepository
 import com.w4f.app.data.repository.DefaultAuthRepository
 import com.w4f.app.data.repository.DefaultDouarRepository
 import com.w4f.app.data.repository.DefaultReportRepository
+import com.w4f.app.data.repository.DefaultSyncRepository
 import com.w4f.app.data.repository.DouarRepository
 import com.w4f.app.data.repository.ReportRepository
+import com.w4f.app.data.repository.SyncRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -31,4 +33,6 @@ abstract class RepositoryModule {
   abstract fun bindReportRepository(impl: DefaultReportRepository): ReportRepository
 
   @Binds @Singleton abstract fun bindLocationClient(impl: DefaultLocationClient): LocationClient
+
+  @Binds @Singleton abstract fun bindSyncRepository(impl: DefaultSyncRepository): SyncRepository
 }

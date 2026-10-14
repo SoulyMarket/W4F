@@ -22,6 +22,12 @@
     <string name="home_sync_all_synced">كل شيء متزامن</string>
     <string name="home_sync_pending">%1$d في الانتظار</string>
     <string name="home_sync_offline">بدون اتصال</string>
+    <string name="home_sync_now">مزامنة الآن</string>
+    <string name="home_dossiers_empty">لا توجد تبليغات بعد</string>
+    <string name="dossier_status_pending">قيد الإرسال</string>
+    <string name="dossier_status_failed">فشل الإرسال، سيعاد المحاولة</string>
+    <string name="dossier_status_rejected">تم الرفض</string>
+    <string name="dossier_status_synced">تم الإرسال</string>
 
     <!-- الإعدادات (Settings) -->
     <string name="settings_title">الإعدادات</string>

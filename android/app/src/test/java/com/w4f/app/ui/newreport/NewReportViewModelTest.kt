@@ -18,6 +18,7 @@ import com.w4f.app.domain.model.Territory
 import com.w4f.app.domain.model.User
 import com.w4f.app.domain.model.UserRole
 import com.w4f.app.domain.model.WaterSource
+import com.w4f.app.sync.SyncScheduler
 import com.w4f.app.testutil.MainDispatcherRule
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,6 +62,7 @@ class NewReportViewModelTest {
   private val reportRepository: ReportRepository = mock()
   private val locationClient: LocationClient = mock()
   private val mediaFileStore: MediaFileStore = mock()
+  private val syncScheduler: SyncScheduler = mock()
 
   @Before
   fun setUp() {
@@ -69,7 +71,14 @@ class NewReportViewModelTest {
   }
 
   private fun viewModel() =
-    NewReportViewModel(authRepository, douarRepository, reportRepository, locationClient, mediaFileStore)
+    NewReportViewModel(
+      authRepository,
+      douarRepository,
+      reportRepository,
+      locationClient,
+      mediaFileStore,
+      syncScheduler,
+    )
 
   @Test
   fun `initial load resolves the moqaddem's own commune ids and pre-populates douars`() = runTest {

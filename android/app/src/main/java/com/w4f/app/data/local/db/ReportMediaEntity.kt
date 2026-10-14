@@ -32,4 +32,8 @@ data class ReportMediaEntity(
   val sizeBytes: Long,
   val capturedAtEpochMillis: Long,
   val syncState: String,
+  // Filled in once `/sync/push` registers this media item server-side —
+  // the id MediaUploadWorker (step 2.4) targets for refresh-upload-url and
+  // complete, distinct from this row's own client-generated `id`.
+  val serverId: String? = null,
 )

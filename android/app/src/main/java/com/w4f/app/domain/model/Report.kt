@@ -115,4 +115,6 @@ data class Report(
   val collectedAt: Instant,
   val syncState: SyncState,
   val syncError: String?,
+  val serverStatus: String?,
+  val serverScore: Int?,
 )

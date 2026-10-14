@@ -23,4 +23,13 @@ interface ReportDao {
 
   @Query("UPDATE reports SET syncState = :syncState, syncError = :syncError WHERE id = :id")
   suspend fun updateSyncState(id: String, syncState: String, syncError: String?)
+
+  @Query("SELECT COUNT(*) FROM reports WHERE id = :id")
+  suspend fun countById(id: String): Int
+
+  @Query(
+    "UPDATE reports SET serverStatus = :serverStatus, serverScore = :serverScore, " +
+      "serverVersion = :serverVersion WHERE id = :id"
+  )
+  suspend fun updateServerState(id: String, serverStatus: String?, serverScore: Int?, serverVersion: Int?)
 }

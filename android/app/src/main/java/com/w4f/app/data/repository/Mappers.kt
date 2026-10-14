@@ -40,6 +40,8 @@ fun Report.toEntity(): ReportEntity =
     syncState = syncState.name,
     syncError = syncError,
     serverVersion = null,
+    serverStatus = serverStatus,
+    serverScore = serverScore,
   )
 
 fun ReportEntity.toDomain(): Report =
@@ -64,6 +66,8 @@ fun ReportEntity.toDomain(): Report =
     collectedAt = Instant.ofEpochMilli(collectedAtEpochMillis),
     syncState = SyncState.valueOf(syncState),
     syncError = syncError,
+    serverStatus = serverStatus,
+    serverScore = serverScore,
   )
 
 fun ReportMedia.toEntity(): ReportMediaEntity =

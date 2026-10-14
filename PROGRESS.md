@@ -716,4 +716,108 @@ tests total, all passing; `:app:assembleDebug` succeeds.
 `app/build.gradle.kts` back in step 2.2's dependency pass, just unused
 until now.
 
+### Step 2.4 — Sync workers (push, media upload, pull) + sync status UI
+
+Also closed the 401-refresh gap `NetworkModule`'s auth interceptor had
+flagged back in step 2.2 ("Does NOT handle refresh-on-401 yet — see step
+2.4"), since background sync has no user present to react to a plain 401
+the way the login screen does: `TokenAuthenticator` (`okhttp3.Authenticator`,
+not an `Interceptor` — it only runs after a 401 comes back) refreshes once
+and retries, builds its own tiny Retrofit/OkHttp pair for the refresh call
+itself (reusing the main `AuthApi` binding would be circular — that binding
+comes from the very `OkHttpClient` this authenticator attaches to), and
+clears the session if the refresh token itself is dead (reuse-detection
+revoked the family, or plain expiry) rather than retrying forever.
+
+**Backend addition found necessary while designing this step**:
+`POST /media/{id}/refresh-upload-url` (see the earlier backend commit) —
+presigned URLs expire in 15 minutes, but `MediaUploadWorker` deliberately
+defers upload until Wi-Fi is available (section 8), which can easily take
+longer. Re-signs the same `object_key` a pending row already has instead
+of registering a new one through `/media/upload-url`.
+
+**Room schema bumped to v2** (`ReportEntity.serverStatus`/`serverScore`,
+`ReportMediaEntity.serverId`) — `fallbackToDestructiveMigration` rather
+than a real migration, acceptable pre-release since this is a cache/
+outbox, not the system of record, and no device has synced data yet.
+
+**`DefaultSyncRepository`** is where the actual logic lives (`SyncWorker`/
+`MediaUploadWorker` are thin — they just call it and map `Result` to
+`Result.success()`/`Result.retry()`):
+- `pushPendingReports()` — batches every locally `PENDING` report (and its
+  still-`PENDING` media) into one `/sync/push` call, idempotent on retry
+  per section 5. Applies each result back: `created`/`updated`/`unchanged`
+  → local `SYNCED`; anything else → `REJECTED` with the server's error key
+  stored verbatim (already localized at the UI layer when 2.5 surfaces it,
+  same pattern as everywhere else `errors.*`/`notifications.*` keys flow
+  through the app). **Documented simplification**: the backend's push
+  response has no client-facing media id to echo back (see the backend's
+  own step-2.1 PROGRESS entry on this), so a result's `media[]` array is
+  matched to the local rows by *position* — both sides iterate in the same
+  order (verified by reading `_register_media`'s loop server-side), so this
+  holds, but it's fragile in a way a real id would not be; fine for a
+  prototype, called out here rather than left implicit.
+- `uploadPendingMedia()` — for every locally pending media item that's been
+  registered server-side (`serverId` set by the push above): re-signs its
+  upload URL, PUTs the (already-compressed, from step 2.3) bytes with a
+  bare `OkHttpClient` (no app interceptors — a presigned URL authenticates
+  itself, and attaching a bearer token to it would just be noise), hashes
+  the bytes for `/complete`'s sha256 check, and marks the row `SYNCED` or
+  `FAILED`. Never touches the network type itself — that's `SyncScheduler`'s
+  job via WorkManager `Constraints`, not business logic the repository
+  should know about.
+- `pull()` — reads the stored cursor (`SyncPreferencesStore`, plain
+  DataStore; nothing here is sensitive enough to need Keystore-backed
+  storage like the tokens/DB passphrase), upserts douars, and for each
+  returned report either updates just the server-echo columns (existing
+  local row) or inserts a full new one (a report this device never created
+  — fresh install or a second device on the same account; "Room is the
+  single source of truth" has to include that case too). Stores the new
+  cursor last, only on success.
+
+**`SyncScheduler`** owns all WorkManager enqueuing: `schedulePeriodicSync()`
+(15 min, `CONNECTED`, `KEEP` so re-running `onCreate` doesn't reset the
+schedule) from `W4FApplication.onCreate()`; `syncNow()` (`REPLACE`,
+exponential backoff) called right after a new report is saved and from the
+home screen's sync bar; `enqueueMediaUpload(wifiOnly)` called by
+`SyncWorker` itself right after a successful push, reading the Wi-Fi-only
+preference (`SyncPreferencesStore`, defaults to `true` per section 8 —
+no Settings screen exists yet to change it, since it isn't separately
+itemized in section 9's step list; deferred, not forgotten).
+
+**Hilt + WorkManager wiring**: `W4FApplication` implements
+`Configuration.Provider`, supplying `HiltWorkerFactory` so `@HiltWorker`
+workers can have dependencies injected; WorkManager's own default
+initializer is removed from the merged manifest (`tools:node="remove"` on
+its `meta-data`, standard pattern) since it would otherwise build a
+`Configuration` with no worker factory and crash the first time
+`SyncWorker`/`MediaUploadWorker` needs constructing.
+
+**Home screen now has its real dossier list and sync status bar**
+(`HomeViewModel` combines `ReportRepository.observeReports()` with a new
+`NetworkMonitor` (`ConnectivityManager.NetworkCallback` wrapped as a
+`Flow<Boolean>`) — the three-state bar from section 8 screen 2 («كل شيء
+متزامن» / «N في الانتظار» / «بدون اتصال») collapses "actively sending" and
+"queued, about to send" into the same `PENDING` state, matching the spec's
+own bar, which doesn't distinguish them either. Each dossier row gets a
+status chip derived from local `syncState` only (pending/failed/rejected/
+sent) — the richer server-status label (submitted/validated/etc.) is
+explicitly step 2.5's "Dossier detail" territory, not duplicated here.
+`SyncState.SYNCING` stays defined-but-unused in the entity (section 8's own
+state list includes it): marking it mid-push risked stranding a report
+there forever if the worker died between marking it and getting a
+response, since `getPending()` only re-picks-up rows still `PENDING` — not
+worth that risk for a transient status with no UI besides folding into the
+same "pending" bucket anyway.
+
+28 new tests (14 `SyncRepository` — push/reject/media-matching/upload-
+success/upload-failure/missing-file/pull-upsert-vs-insert/error-as-Result,
+not-thrown; 5 `HomeViewModel` — the three sync-status states + sync-now
+delegation) + the pre-existing 22 = 50 Android unit tests total, all
+passing; `:app:assembleDebug` succeeds. Not yet verified on a device (the
+emulator still isn't available this session) — the actual WorkManager
+scheduling, the real presigned-upload round-trip, and the 401-refresh path
+all need that before they can be called done, not just "compiles and the
+repository logic is unit-tested."
+
 Phase 3 (Web), Phase 4 (AI) — not started.

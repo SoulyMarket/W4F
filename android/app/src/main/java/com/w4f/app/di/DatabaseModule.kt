@@ -28,6 +28,7 @@ object DatabaseModule {
     val passphrase = passphraseStore.getOrCreatePassphrase()
     return Room.databaseBuilder(context, AppDatabase::class.java, "w4f.db")
       .openHelperFactory(SupportOpenHelperFactory(passphrase))
+      .fallbackToDestructiveMigration(true)
       .build()
   }
 

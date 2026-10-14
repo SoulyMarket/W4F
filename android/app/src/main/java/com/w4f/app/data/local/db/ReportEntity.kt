@@ -32,4 +32,9 @@ data class ReportEntity(
   val syncState: String,
   val syncError: String?,
   val serverVersion: Int?,
+  // Filled in by step 2.4's pull sync — the server's own view of this
+  // report (status/score), distinct from `syncState` which is purely the
+  // phone's own push lifecycle (section 8).
+  val serverStatus: String? = null,
+  val serverScore: Int? = null,
 )

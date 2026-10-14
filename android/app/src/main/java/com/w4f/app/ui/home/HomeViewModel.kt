@@ -2,19 +2,48 @@ package com.w4f.app.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.w4f.app.data.local.NetworkMonitor
 import com.w4f.app.data.repository.AuthRepository
+import com.w4f.app.data.repository.ReportRepository
+import com.w4f.app.domain.model.Report
+import com.w4f.app.domain.model.SyncState
+import com.w4f.app.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class HomeUiState(val fullName: String? = null, val loggedOut: Boolean = false)
+/** Section 8, screen 2's three-state sync bar: «كل شيء متزامن» / «N في
+ * الانتظار» / «بدون اتصال». Deliberately coarse — "syncing right now" and
+ * "queued, about to sync" both read as [PENDING]; the spec's own bar only
+ * has these three states, nothing in between. */
+enum class SyncStatus {
+  ALL_SYNCED,
+  PENDING,
+  OFFLINE,
+}
+
+data class HomeUiState(
+  val fullName: String? = null,
+  val loggedOut: Boolean = false,
+  val reports: List<Report> = emptyList(),
+  val syncStatus: SyncStatus = SyncStatus.ALL_SYNCED,
+  val pendingCount: Int = 0,
+)
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val authRepository: AuthRepository) : ViewModel() {
+class HomeViewModel
+@Inject
+constructor(
+  private val authRepository: AuthRepository,
+  private val reportRepository: ReportRepository,
+  private val networkMonitor: NetworkMonitor,
+  private val syncScheduler: SyncScheduler,
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(HomeUiState())
   val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -25,6 +54,22 @@ class HomeViewModel @Inject constructor(private val authRepository: AuthReposito
         _uiState.update { it.copy(fullName = user.fullName) }
       }
     }
+    viewModelScope.launch {
+      combine(reportRepository.observeReports(), networkMonitor.isConnected) { reports, connected ->
+          val pendingCount =
+            reports.count { it.syncState == SyncState.PENDING || it.syncState == SyncState.FAILED }
+          val status =
+            when {
+              pendingCount == 0 -> SyncStatus.ALL_SYNCED
+              connected -> SyncStatus.PENDING
+              else -> SyncStatus.OFFLINE
+            }
+          Triple(reports, status, pendingCount)
+        }
+        .collect { (reports, status, pendingCount) ->
+          _uiState.update { it.copy(reports = reports, syncStatus = status, pendingCount = pendingCount) }
+        }
+    }
   }
 
   fun onLogoutClick() {
@@ -32,5 +77,9 @@ class HomeViewModel @Inject constructor(private val authRepository: AuthReposito
       authRepository.logout()
       _uiState.update { it.copy(loggedOut = true) }
     }
+  }
+
+  fun onSyncNowClick() {
+    syncScheduler.syncNow()
   }
 }

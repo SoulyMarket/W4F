@@ -18,6 +18,7 @@ import com.w4f.app.domain.model.ReportMedia
 import com.w4f.app.domain.model.SeverityLevel
 import com.w4f.app.domain.model.SyncState
 import com.w4f.app.domain.model.WaterSource
+import com.w4f.app.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import java.time.Instant
@@ -112,6 +113,7 @@ constructor(
   private val reportRepository: ReportRepository,
   private val locationClient: LocationClient,
   private val mediaFileStore: MediaFileStore,
+  private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(NewReportUiState())
@@ -286,6 +288,8 @@ constructor(
           collectedAt = now,
           syncState = SyncState.PENDING,
           syncError = null,
+          serverStatus = null,
+          serverScore = null,
         )
       val media =
         state.media.map { draft ->
@@ -302,6 +306,7 @@ constructor(
         }
       reportRepository.saveNewReport(report, media)
       _uiState.update { it.copy(isSaving = false, savedReportId = reportId) }
+      syncScheduler.syncNow()
     }
   }
 }
