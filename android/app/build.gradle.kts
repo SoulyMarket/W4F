@@ -91,6 +91,7 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.turbine)
   testImplementation(libs.androidx.room.runtime)
+  testImplementation(libs.androidx.test.core)
 
   // Instrumented tests: jUnit rules and runners
   androidTestImplementation(libs.androidx.test.core)
