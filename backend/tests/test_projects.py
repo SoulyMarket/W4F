@@ -79,9 +79,7 @@ def auth_headers(client, email):
 def test_manager_converts_validated_report_to_project(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
     make_user(db_session, UserRole.MANAGER, "manager@example.com", territory=territory)
-    moqaddem = make_user(
-        db_session, UserRole.MOQADDEM, "moqaddem@example.com", territory=territory
-    )
+    moqaddem = make_user(db_session, UserRole.MOQADDEM, "moqaddem@example.com", territory=territory)
     report = make_report(db_session, douar, moqaddem, status=ReportStatus.VALIDATED)
     headers = auth_headers(client, "manager@example.com")
 
@@ -105,9 +103,7 @@ def test_manager_converts_validated_report_to_project(client, db_session):
 
 def test_cannot_convert_unvalidated_report_to_project(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager2@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager2@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem2@example.com", territory=territory
     )
@@ -141,9 +137,7 @@ def test_non_manager_cannot_create_project(client, db_session):
 
 def test_valid_transition_updates_status_and_progress(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager3@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager3@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem4@example.com", territory=territory
     )
@@ -172,9 +166,7 @@ def test_valid_transition_updates_status_and_progress(client, db_session):
 
 def test_invalid_transition_is_rejected_with_409(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager4@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager4@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem5@example.com", territory=territory
     )
@@ -198,9 +190,7 @@ def test_invalid_transition_is_rejected_with_409(client, db_session):
 
 def test_any_non_terminal_status_can_move_to_cancelled(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager5@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager5@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem6@example.com", territory=territory
     )
@@ -224,9 +214,7 @@ def test_any_non_terminal_status_can_move_to_cancelled(client, db_session):
 
 def test_completed_is_terminal_no_further_transitions(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager6@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager6@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem7@example.com", territory=territory
     )
@@ -260,9 +248,7 @@ def test_completed_is_terminal_no_further_transitions(client, db_session):
 
 def test_project_detail_includes_updates_history(client, db_session):
     douar, territory = make_douar_in_territory(db_session)
-    make_user(
-        db_session, UserRole.MANAGER, "manager7@example.com", territory=territory
-    )
+    make_user(db_session, UserRole.MANAGER, "manager7@example.com", territory=territory)
     moqaddem = make_user(
         db_session, UserRole.MOQADDEM, "moqaddem8@example.com", territory=territory
     )
@@ -296,9 +282,7 @@ def test_list_projects_is_territory_scoped(client, db_session):
     db_session.add(douar_b)
     db_session.flush()
 
-    make_user(
-        db_session, UserRole.MANAGER, "managera@example.com", territory=territory_a
-    )
+    make_user(db_session, UserRole.MANAGER, "managera@example.com", territory=territory_a)
     moqaddem = make_user(db_session, UserRole.MOQADDEM, "moqaddem9@example.com")
     report_a = make_report(db_session, douar_a, moqaddem)
     report_b = make_report(db_session, douar_b, moqaddem)
@@ -328,3 +312,41 @@ def test_list_projects_is_territory_scoped(client, db_session):
     assert resp.status_code == 200
     titles = {item["title"] for item in resp.json()["items"]}
     assert titles == {"A"}
+
+
+def test_list_projects_filters_by_report_id(client, db_session):
+    """Resolves at most one project (Project.report_id is unique) — the
+    dossier detail screen's "linked project" lookup (section 8)."""
+    douar, territory = make_douar_in_territory(db_session)
+    make_user(db_session, UserRole.MANAGER, "managerb@example.com", territory=territory)
+    moqaddem = make_user(db_session, UserRole.MOQADDEM, "moqaddem10@example.com")
+    report_with_project = make_report(db_session, douar, moqaddem)
+    report_without_project = make_report(db_session, douar, moqaddem)
+
+    admin = make_user(db_session, UserRole.ADMIN, "admin2@example.com")
+    from app.models.project import Project as P
+
+    project = P(
+        report_id=report_with_project.id,
+        douar_id=douar.id,
+        title="Linked",
+        solution_type="pump_repair",
+        owner_id=admin.id,
+    )
+    db_session.add(project)
+    db_session.flush()
+
+    headers = auth_headers(client, "managerb@example.com")
+
+    resp = client.get(
+        "/api/v1/projects", params={"report_id": str(report_with_project.id)}, headers=headers
+    )
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+    assert len(items) == 1
+    assert items[0]["title"] == "Linked"
+
+    empty_resp = client.get(
+        "/api/v1/projects", params={"report_id": str(report_without_project.id)}, headers=headers
+    )
+    assert empty_resp.json()["items"] == []

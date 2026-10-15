@@ -147,12 +147,19 @@ def list_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(_require_any),
     status_filter: ProjectStatus | None = Query(default=None, alias="status"),
+    report_id: uuid.UUID | None = Query(
+        default=None,
+        description="Report.id is unique on Project, so this resolves at most one project — "
+        "the dossier detail screen's 'linked project' lookup (section 8).",
+    ),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ) -> ProjectListOut:
     query = _projects_query_with_scope(db, current_user)
     if status_filter is not None:
         query = query.filter(Project.status == status_filter)
+    if report_id is not None:
+        query = query.filter(Project.report_id == report_id)
 
     total = query.with_entities(func.count(Project.id)).scalar()
     items = (
