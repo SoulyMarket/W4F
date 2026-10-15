@@ -152,12 +152,27 @@ def recompute_all_open_reports(db: Session, config: ScoringConfig) -> int:
     return len(open_reports)
 
 
+# reason_params that carry a raw section-4 enum value rather than free text
+# (a count, a distance, a douar name) — these need a second i18n lookup
+# before being substituted into the sentence template, or the rendered
+# text ends up with an English machine value sitting inside an otherwise
+# Arabic/French sentence (e.g. "تواتر الانقطاع: daily"). Keyed by the
+# reason_params key name; the value is the i18n key prefix to look the
+# raw value up under (see enum.frequency.*/enum.severity.* in ar.json/
+# fr.json).
+_ENUM_VALUED_PARAM_PREFIXES = {"frequency": "enum.frequency", "severity": "enum.severity"}
+
+
 def localize_breakdown(breakdown: list[dict], lang: str) -> list[dict]:
     """Adds a `reason` field (section 2.1: priority reasons are localized
     server-side via Accept-Language) to each stored breakdown entry,
     without mutating the stored reason_key/reason_params — those stay the
     machine form clients can translate themselves if they prefer."""
-    return [
-        {**entry, "reason": t(entry["reason_key"], lang, **entry["reason_params"])}
-        for entry in breakdown
-    ]
+    results = []
+    for entry in breakdown:
+        params = dict(entry["reason_params"])
+        for param_key, i18n_prefix in _ENUM_VALUED_PARAM_PREFIXES.items():
+            if param_key in params:
+                params[param_key] = t(f"{i18n_prefix}.{params[param_key]}", lang)
+        results.append({**entry, "reason": t(entry["reason_key"], lang, **params)})
+    return results

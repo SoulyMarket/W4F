@@ -31,5 +31,21 @@
   "notifications.priority_changed": "La priorité du signalement à {douar} a changé",
   "notifications.project_created": "Un projet a été créé pour votre signalement à {douar}",
   "notifications.project_status_changed": "Le statut du projet à {douar} est passé à {status}",
-  "notifications.project_completed": "Le projet à {douar} est terminé"
+  "notifications.project_completed": "Le projet à {douar} est terminé",
+  "enum.frequency.permanent": "Permanente",
+  "enum.frequency.daily": "Quotidienne",
+  "enum.frequency.weekly": "Hebdomadaire",
+  "enum.frequency.monthly": "Mensuelle",
+  "enum.frequency.rare": "Rare",
+  "enum.severity.low": "Faible",
+  "enum.severity.medium": "Moyenne",
+  "enum.severity.high": "Élevée",
+  "enum.severity.critical": "Critique",
+  "enum.project_status.new": "Nouveau",
+  "enum.project_status.in_study": "À l'étude",
+  "enum.project_status.approved": "Approuvé",
+  "enum.project_status.in_preparation": "En préparation",
+  "enum.project_status.in_progress": "En cours",
+  "enum.project_status.completed": "Terminé",
+  "enum.project_status.cancelled": "Annulé"
 }

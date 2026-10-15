@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.models.enums import NotificationType, UserRole
 from app.models.notification import Notification
 from app.models.user import User
@@ -77,3 +78,16 @@ def notify_territory_experts(
         )
         for e in recipients
     ]
+
+
+def render_notification_message(notification: Notification, lang: str) -> str:
+    """Single shared renderer for `GET /notifications` and `GET /sync/pull`
+    (previously duplicated in both routes, see PROGRESS.md) — one place to
+    fix when a param needs a second i18n lookup before substitution, like
+    `project_status_changed`'s `status`, a raw section-4 enum value that
+    would otherwise sit untranslated inside an Arabic/French sentence
+    (e.g. "...إلى in_progress")."""
+    params = dict(notification.params)
+    if notification.type == NotificationType.PROJECT_STATUS_CHANGED and "status" in params:
+        params["status"] = t(f"enum.project_status.{params['status']}", lang)
+    return t(f"notifications.{notification.type.value}", lang, **params)

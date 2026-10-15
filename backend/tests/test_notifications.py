@@ -70,6 +70,33 @@ def test_notification_message_is_localized(client, db_session):
     assert "Douar X" in message
 
 
+def test_project_status_changed_message_localizes_the_status_value(client, db_session):
+    """Found while verifying step 2.5 on-device: `params["status"]` is the
+    raw section-4 enum value (e.g. "in_progress"), substituted straight into
+    the sentence without a second i18n lookup."""
+    user = make_user(db_session, UserRole.MOQADDEM, "e@example.com")
+    db_session.add(
+        Notification(
+            user_id=user.id,
+            type=NotificationType.PROJECT_STATUS_CHANGED,
+            params={"douar": "Douar X", "status": "in_progress"},
+            entity_type="project",
+            entity_id=user.id,
+        )
+    )
+    db_session.flush()
+    headers = auth_headers(client, "e@example.com")
+
+    resp = client.get("/api/v1/notifications", headers={**headers, "Accept-Language": "ar"})
+    message = resp.json()["items"][0]["message"]
+    assert "in_progress" not in message
+    assert "قيد الإنجاز" in message
+
+    fr_resp = client.get("/api/v1/notifications", headers={**headers, "Accept-Language": "fr"})
+    fr_message = fr_resp.json()["items"][0]["message"]
+    assert "En cours" in fr_message
+
+
 def test_unread_count_and_mark_read(client, db_session):
     user = make_user(db_session, UserRole.MOQADDEM, "d@example.com")
     n1 = Notification(

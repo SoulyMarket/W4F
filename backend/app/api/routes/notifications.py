@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_request_language, require_roles
 from app.core.errors import ApiError
 from app.db.session import get_db
-from app.i18n import t
 from app.models.device_token import DeviceToken
 from app.models.enums import UserRole
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.notifications import DeviceTokenCreate, NotificationListOut, NotificationOut
+from app.services.notifications import render_notification_message
 
 router = APIRouter(tags=["notifications"])
 
@@ -20,7 +20,6 @@ _require_any = require_roles(*list(UserRole))
 
 
 def _to_out(notification: Notification, lang: str) -> NotificationOut:
-    message = t(f"notifications.{notification.type.value}", lang, **notification.params)
     return NotificationOut(
         id=notification.id,
         type=notification.type,
@@ -29,7 +28,7 @@ def _to_out(notification: Notification, lang: str) -> NotificationOut:
         entity_id=notification.entity_id,
         is_read=notification.is_read,
         created_at=notification.created_at,
-        message=message,
+        message=render_notification_message(notification, lang),
     )
 
 

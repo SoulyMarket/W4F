@@ -31,5 +31,21 @@
   "notifications.priority_changed": "تغيرت أولوية البلاغ في {douar}",
   "notifications.project_created": "تم إنشاء مشروع لبلاغكم في {douar}",
   "notifications.project_status_changed": "تغيرت حالة المشروع في {douar} إلى {status}",
-  "notifications.project_completed": "اكتمل المشروع في {douar}"
+  "notifications.project_completed": "اكتمل المشروع في {douar}",
+  "enum.frequency.permanent": "دائم",
+  "enum.frequency.daily": "يوميا",
+  "enum.frequency.weekly": "أسبوعيا",
+  "enum.frequency.monthly": "شهريا",
+  "enum.frequency.rare": "نادرا",
+  "enum.severity.low": "منخفضة",
+  "enum.severity.medium": "متوسطة",
+  "enum.severity.high": "مرتفعة",
+  "enum.severity.critical": "حرجة",
+  "enum.project_status.new": "جديد",
+  "enum.project_status.in_study": "قيد الدراسة",
+  "enum.project_status.approved": "تمت الموافقة",
+  "enum.project_status.in_preparation": "قيد التحضير",
+  "enum.project_status.in_progress": "قيد الإنجاز",
+  "enum.project_status.completed": "مكتمل",
+  "enum.project_status.cancelled": "ملغى"
 }

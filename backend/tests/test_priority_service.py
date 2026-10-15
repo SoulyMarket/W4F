@@ -76,9 +76,7 @@ def make_report(db_session, douar, moqaddem, **overrides):
 
 
 def make_active_config(db_session, admin, weights=None):
-    config = ScoringConfig(
-        weights=weights or DEFAULT_WEIGHTS, is_active=True, created_by=admin.id
-    )
+    config = ScoringConfig(weights=weights or DEFAULT_WEIGHTS, is_active=True, created_by=admin.id)
     db_session.add(config)
     db_session.flush()
     return config
@@ -176,3 +174,40 @@ def test_localize_breakdown_adds_reason_without_mutating_keys(db_session):
 
     localized_fr = localize_breakdown(breakdown, "fr")
     assert "personnes" in localized_fr[0]["reason"]
+
+
+def test_localize_breakdown_translates_the_enum_value_inside_frequency_and_severity_reasons():
+    """Found while verifying step 2.5 on-device: the breakdown's
+    frequency/severity reasons were substituting the raw English enum value
+    (compute_priority is lang-agnostic, so reason_params always carries the
+    machine value) straight into an otherwise-Arabic/French sentence."""
+    breakdown = [
+        {
+            "criterion": "frequency",
+            "value": "daily",
+            "weight": 10,
+            "points": 8,
+            "reason_key": "priority.frequency",
+            "reason_params": {"frequency": "daily"},
+        },
+        {
+            "criterion": "severity",
+            "value": "high",
+            "weight": 15,
+            "points": 11,
+            "reason_key": "priority.severity",
+            "reason_params": {"severity": "high"},
+        },
+    ]
+
+    localized_ar = localize_breakdown(breakdown, "ar")
+    assert "daily" not in localized_ar[0]["reason"]
+    assert "يوميا" in localized_ar[0]["reason"]
+    assert "high" not in localized_ar[1]["reason"]
+    assert "مرتفعة" in localized_ar[1]["reason"]
+    # reason_params itself stays the raw machine value — only `reason` is localized.
+    assert localized_ar[0]["reason_params"]["frequency"] == "daily"
+
+    localized_fr = localize_breakdown(breakdown, "fr")
+    assert "Quotidienne" in localized_fr[0]["reason"]
+    assert "Élevée" in localized_fr[1]["reason"]

@@ -15,7 +15,6 @@ from app.api.routes.reports import latest_priority_subquery, report_to_out
 from app.core.config import Settings
 from app.core.geo import latlon_from_point, point_from_latlon
 from app.db.session import get_db
-from app.i18n import t
 from app.models.douar import Douar
 from app.models.enums import NotificationType, ReportStatus, UploadStatus, UserRole
 from app.models.notification import Notification
@@ -41,7 +40,7 @@ from app.schemas.sync import (
     SyncReportResultOut,
     SyncValidationOut,
 )
-from app.services.notifications import notify_territory_experts
+from app.services.notifications import notify_territory_experts, render_notification_message
 from app.services.priority import get_active_scoring_config, recompute_priority
 from app.services.storage import UPLOAD_URL_EXPIRE_SECONDS, generate_upload_url, get_s3_client
 from app.services.territory_scope import get_accessible_territory_ids
@@ -279,7 +278,6 @@ def push(
 
 
 def _notification_to_out(notification: Notification, lang: str) -> NotificationOut:
-    message = t(f"notifications.{notification.type.value}", lang, **notification.params)
     return NotificationOut(
         id=notification.id,
         type=notification.type,
@@ -288,7 +286,7 @@ def _notification_to_out(notification: Notification, lang: str) -> NotificationO
         entity_id=notification.entity_id,
         is_read=notification.is_read,
         created_at=notification.created_at,
-        message=message,
+        message=render_notification_message(notification, lang),
     )
 
 
