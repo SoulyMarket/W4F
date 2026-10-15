@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.w4f.app.data.local.NetworkMonitor
 import com.w4f.app.data.repository.AuthRepository
+import com.w4f.app.data.repository.NotificationRepository
 import com.w4f.app.data.repository.ReportRepository
 import com.w4f.app.domain.model.Report
 import com.w4f.app.domain.model.SyncState
@@ -33,6 +34,7 @@ data class HomeUiState(
   val reports: List<Report> = emptyList(),
   val syncStatus: SyncStatus = SyncStatus.ALL_SYNCED,
   val pendingCount: Int = 0,
+  val unreadNotificationCount: Int = 0,
 )
 
 @HiltViewModel
@@ -41,6 +43,7 @@ class HomeViewModel
 constructor(
   private val authRepository: AuthRepository,
   private val reportRepository: ReportRepository,
+  private val notificationRepository: NotificationRepository,
   private val networkMonitor: NetworkMonitor,
   private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
@@ -76,6 +79,11 @@ constructor(
         .collect { (reports, status, pendingCount) ->
           _uiState.update { it.copy(reports = reports, syncStatus = status, pendingCount = pendingCount) }
         }
+    }
+    viewModelScope.launch {
+      notificationRepository.observeUnreadCount().collect { count ->
+        _uiState.update { it.copy(unreadNotificationCount = count) }
+      }
     }
   }
 

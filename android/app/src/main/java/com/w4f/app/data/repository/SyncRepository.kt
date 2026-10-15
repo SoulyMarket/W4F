@@ -2,6 +2,7 @@ package com.w4f.app.data.repository
 
 import com.w4f.app.data.local.SyncPreferencesStore
 import com.w4f.app.data.local.db.DouarDao
+import com.w4f.app.data.local.db.NotificationDao
 import com.w4f.app.data.local.db.ReportDao
 import com.w4f.app.data.local.db.ReportMediaDao
 import com.w4f.app.data.media.MediaUploader
@@ -39,6 +40,7 @@ constructor(
   private val reportDao: ReportDao,
   private val reportMediaDao: ReportMediaDao,
   private val douarDao: DouarDao,
+  private val notificationDao: NotificationDao,
   private val preferencesStore: SyncPreferencesStore,
 ) : SyncRepository {
 
@@ -107,6 +109,7 @@ constructor(
     val response = syncApi.pull(since)
 
     douarDao.upsertAll(response.douars.map { it.toEntity() })
+    notificationDao.upsertAll(response.notifications.map { it.toEntity() })
 
     response.reports.forEach { dto ->
       if (reportDao.countById(dto.id) > 0) {

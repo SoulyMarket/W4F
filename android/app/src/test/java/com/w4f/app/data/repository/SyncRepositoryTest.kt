@@ -2,6 +2,7 @@ package com.w4f.app.data.repository
 
 import com.w4f.app.data.local.SyncPreferencesStore
 import com.w4f.app.data.local.db.DouarDao
+import com.w4f.app.data.local.db.NotificationDao
 import com.w4f.app.data.local.db.ReportDao
 import com.w4f.app.data.local.db.ReportEntity
 import com.w4f.app.data.local.db.ReportMediaDao
@@ -39,6 +40,7 @@ class SyncRepositoryTest {
   private val reportDao: ReportDao = mock()
   private val reportMediaDao: ReportMediaDao = mock()
   private val douarDao: DouarDao = mock()
+  private val notificationDao: NotificationDao = mock()
   private val preferencesStore: SyncPreferencesStore = mock()
 
   private val repository =
@@ -49,6 +51,7 @@ class SyncRepositoryTest {
       reportDao,
       reportMediaDao,
       douarDao,
+      notificationDao,
       preferencesStore,
     )
 

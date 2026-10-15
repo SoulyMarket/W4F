@@ -101,8 +101,27 @@ data class SyncReportDto(
   val score: Int?,
 )
 
+/** `message` is already localized server-side (Accept-Language sent with
+ * this same pull request) — see section 2.1's rule that title/body text is
+ * never stored, only rendered at read time. Caching the rendered string
+ * locally (rather than `type` + `params`, which would let the Android app
+ * re-render on a language switch) is a known simplification: there's no
+ * in-app language switch built yet (no Settings screen), so staleness
+ * isn't practically observable. */
+@Serializable
+data class SyncNotificationDto(
+  val id: String,
+  val type: String,
+  @SerialName("entity_type") val entityType: String,
+  @SerialName("entity_id") val entityId: String,
+  @SerialName("is_read") val isRead: Boolean,
+  @SerialName("created_at") val createdAt: String,
+  val message: String,
+)
+
 @Serializable data class SyncPullResponseDto(
   val cursor: String,
   val douars: List<SyncDouarDto>,
   val reports: List<SyncReportDto>,
+  val notifications: List<SyncNotificationDto> = emptyList(),
 )

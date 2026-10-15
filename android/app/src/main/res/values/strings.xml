@@ -148,4 +148,9 @@
     <string name="project_status_in_progress">قيد الإنجاز</string>
     <string name="project_status_completed">مكتمل</string>
     <string name="project_status_cancelled">ملغى</string>
+
+    <!-- الإشعارات (Notifications) -->
+    <string name="notifications_title">الإشعارات</string>
+    <string name="notifications_empty">لا توجد إشعارات</string>
+    <string name="home_notifications">الإشعارات (%1$d)</string>
 </resources>

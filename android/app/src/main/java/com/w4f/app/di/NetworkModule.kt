@@ -4,6 +4,7 @@ import com.w4f.app.BuildConfig
 import com.w4f.app.data.local.TokenStore
 import com.w4f.app.data.remote.AuthApi
 import com.w4f.app.data.remote.MediaApi
+import com.w4f.app.data.remote.NotificationApi
 import com.w4f.app.data.remote.ReportApi
 import com.w4f.app.data.remote.SyncApi
 import com.w4f.app.data.remote.TokenAuthenticator
@@ -82,4 +83,9 @@ object NetworkModule {
   @Provides @Singleton fun provideMediaApi(retrofit: Retrofit): MediaApi = retrofit.create(MediaApi::class.java)
 
   @Provides @Singleton fun provideReportApi(retrofit: Retrofit): ReportApi = retrofit.create(ReportApi::class.java)
+
+  @Provides
+  @Singleton
+  fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
+    retrofit.create(NotificationApi::class.java)
 }

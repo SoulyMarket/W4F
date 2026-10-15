@@ -15,6 +15,7 @@ import com.w4f.app.ui.dossierdetail.DossierDetailScreen
 import com.w4f.app.ui.home.HomeScreen
 import com.w4f.app.ui.login.LoginScreen
 import com.w4f.app.ui.newreport.NewReportScreen
+import com.w4f.app.ui.notifications.NotificationsScreen
 
 @Composable
 fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
@@ -43,6 +44,7 @@ fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
             },
             onNewReportClick = { backStack.add(NewReport) },
             onReportClick = { reportId -> backStack.add(DossierDetail(reportId)) },
+            onNotificationsClick = { backStack.add(Notifications) },
             modifier = Modifier.safeDrawingPadding().padding(16.dp),
           )
         }
@@ -58,6 +60,9 @@ fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
             reportId = key.reportId,
             modifier = Modifier.safeDrawingPadding().padding(16.dp),
           )
+        }
+        entry<Notifications> {
+          NotificationsScreen(modifier = Modifier.safeDrawingPadding().padding(16.dp))
         }
       },
   )

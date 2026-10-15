@@ -985,4 +985,58 @@ the pull response already carries localized notifications, just not
 consumed/displayed yet) and the offline-tile map (section 8 screen 6,
 MapLibre — not started).
 
+### Step 2.5, part 2 — Notifications screen
+
+Section 8 screen 5 ("الإشعارات"). Room-backed, unlike the dossier detail
+screen — a notification center is a list that should open offline and show
+whatever was last synced, same reasoning as the dossier list. `/sync/pull`
+already carried localized notifications in its response (step 2.1's
+backend work); this step finally consumes them: `NotificationEntity`/
+`NotificationDao` (schema v3), upserted in `SyncRepository.pull()`,
+surfaced via a new `NotificationRepository`. Home gets a
+«الإشعارات (N)» entry point showing the live unread count. Tapping a
+notification marks it read optimistically (instant, works offline) and
+best-effort notifies the server (`POST /notifications/{id}/read`) — no
+retry queue for this one action, since the next successful pull
+reconciles `is_read` from the server's own copy regardless.
+
+**Known simplification, documented rather than silently cut**: the cached
+`message` is the server-rendered, already-localized string, not `type` +
+raw `params` — consistent with how dossier status/problem labels are
+already resolved client-side elsewhere, but it does mean a future in-app
+language switch (not built yet — no Settings screen exists) would show
+stale-language text until the next pull. Not a practical issue today.
+
+**Found and fixed in the same pass, confirmed on-device**: bumping the
+Room schema to v3 triggered `fallbackToDestructiveMigration`, which wiped
+the local `reports` table — but the sync cursor lives in a *separate*
+DataStore that survived the wipe untouched. The next pull would then only
+return rows changed *after* that stale cursor, so anything that hadn't
+changed since would never come back: a silent, permanent loss of the
+moqaddem's own dossier list from a routine schema bump, not a one-off.
+Fixed with `SyncPreferencesStore.clearCursor()`, wired into
+`RoomDatabase.Callback.onDestructiveMigration` in `DatabaseModule` so the
+two always reset together from now on. Verified by clearing app data and
+confirming a clean login re-pulls the full dossier list correctly; a
+direct repeat of the *original* trigger (an actual version-N→N+1
+destructive migration under the fixed code) wasn't re-tested against a
+real upgrade path, since that needs a second schema bump to reproduce —
+worth double-checking the next time the schema changes.
+
+**Full end-to-end verified on-device**, closing out Phase 2's own
+definition-of-done line for this piece ("expert validates on backend →
+status and notification appear on the phone"): validated a report as the
+seeded expert directly against the live backend, synced on the phone, and
+confirmed the "تم التحقق من بلاغكم في Armed" notification arrived with the
+unread badge, read/unread card styling, and mark-as-read all working.
+
+8 new Android unit tests (4 `NotificationDaoTest` + 3
+`NotificationsViewModelTest` + 1 `HomeViewModelTest` addition for the
+unread-count wiring) — 63 Android unit tests total.
+
+Still to build for step 2.5: the offline-tile map (section 8 screen 6,
+MapLibre — not started; likely the largest remaining piece, and true
+*offline* tile packs specifically may need scoping down for a prototype
+without real tile data to bundle).
+
 Phase 3 (Web), Phase 4 (AI) — not started.

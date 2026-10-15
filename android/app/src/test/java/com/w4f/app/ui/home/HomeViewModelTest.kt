@@ -2,6 +2,7 @@ package com.w4f.app.ui.home
 
 import com.w4f.app.data.local.NetworkMonitor
 import com.w4f.app.data.repository.AuthRepository
+import com.w4f.app.data.repository.NotificationRepository
 import com.w4f.app.data.repository.ReportRepository
 import com.w4f.app.domain.model.AppLanguage
 import com.w4f.app.domain.model.InterruptionFrequency
@@ -39,6 +40,7 @@ class HomeViewModelTest {
 
   private val authRepository: AuthRepository = mock { on { hasSession } doReturn MutableStateFlow(true) }
   private val reportRepository: ReportRepository = mock()
+  private val notificationRepository: NotificationRepository = mock()
   private val networkMonitor: NetworkMonitor = mock()
   private val syncScheduler: SyncScheduler = mock()
 
@@ -55,6 +57,7 @@ class HomeViewModelTest {
   @Before
   fun setUp() {
     runBlocking { whenever(authRepository.currentUser()).thenReturn(Result.success(user)) }
+    whenever(notificationRepository.observeUnreadCount()).thenReturn(flowOf(0))
   }
 
   private fun report(syncState: SyncState) =
@@ -83,7 +86,8 @@ class HomeViewModelTest {
       serverScore = null,
     )
 
-  private fun viewModel() = HomeViewModel(authRepository, reportRepository, networkMonitor, syncScheduler)
+  private fun viewModel() =
+    HomeViewModel(authRepository, reportRepository, notificationRepository, networkMonitor, syncScheduler)
 
   @Test
   fun `no pending or failed reports means everything is synced`() = runTest {
@@ -145,6 +149,18 @@ class HomeViewModelTest {
     // is the only thing that would ever pull reference data (douars)
     // without waiting on the 15-minute periodic tick.
     verify(syncScheduler, atLeastOnce()).syncNow()
+  }
+
+  @Test
+  fun `unread notification count flows into the ui state`() = runTest {
+    whenever(reportRepository.observeReports()).thenReturn(flowOf(emptyList()))
+    whenever(networkMonitor.isConnected).thenReturn(flowOf(true))
+    whenever(notificationRepository.observeUnreadCount()).thenReturn(flowOf(3))
+
+    val viewModel = viewModel()
+    advanceUntilIdle()
+
+    assertEquals(3, viewModel.uiState.value.unreadNotificationCount)
   }
 
   @Test

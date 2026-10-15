@@ -1,9 +1,11 @@
 package com.w4f.app.data.repository
 
 import com.w4f.app.data.local.db.DouarEntity
+import com.w4f.app.data.local.db.NotificationEntity
 import com.w4f.app.data.local.db.ReportEntity
 import com.w4f.app.data.remote.dto.SyncDouarDto
 import com.w4f.app.data.remote.dto.SyncMediaPushDto
+import com.w4f.app.data.remote.dto.SyncNotificationDto
 import com.w4f.app.data.remote.dto.SyncReportDto
 import com.w4f.app.data.remote.dto.SyncReportPushDto
 import com.w4f.app.domain.model.Report
@@ -80,4 +82,15 @@ fun SyncReportDto.toEntity(): ReportEntity =
     serverVersion = version,
     serverStatus = status,
     serverScore = score,
+  )
+
+fun SyncNotificationDto.toEntity(): NotificationEntity =
+  NotificationEntity(
+    id = id,
+    type = type,
+    entityType = entityType,
+    entityId = entityId,
+    isRead = isRead,
+    createdAtEpochMillis = Instant.parse(createdAt).toEpochMilli(),
+    message = message,
   )

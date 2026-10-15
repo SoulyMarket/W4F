@@ -36,6 +36,7 @@ fun HomeScreen(
   onLoggedOut: () -> Unit,
   onNewReportClick: () -> Unit,
   onReportClick: (String) -> Unit,
+  onNotificationsClick: () -> Unit,
   modifier: Modifier = Modifier,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -46,7 +47,16 @@ fun HomeScreen(
   }
 
   Column(modifier = modifier.fillMaxSize().padding(24.dp)) {
-    Text(text = stringResource(R.string.home_title), style = MaterialTheme.typography.titleLarge)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+      Text(
+        text = stringResource(R.string.home_title),
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.weight(1f),
+      )
+      TextButton(onClick = onNotificationsClick) {
+        Text(stringResource(R.string.home_notifications, uiState.unreadNotificationCount))
+      }
+    }
     uiState.fullName?.let { name -> Text(text = name, modifier = Modifier.padding(top = 8.dp)) }
 
     Button(onClick = onNewReportClick, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {

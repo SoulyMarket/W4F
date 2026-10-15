@@ -8,8 +8,10 @@ import com.w4f.app.data.repository.AuthRepository
 import com.w4f.app.data.repository.DefaultAuthRepository
 import com.w4f.app.data.repository.DefaultDouarRepository
 import com.w4f.app.data.repository.DefaultReportRepository
+import com.w4f.app.data.repository.DefaultNotificationRepository
 import com.w4f.app.data.repository.DefaultSyncRepository
 import com.w4f.app.data.repository.DouarRepository
+import com.w4f.app.data.repository.NotificationRepository
 import com.w4f.app.data.repository.ReportRepository
 import com.w4f.app.data.repository.SyncRepository
 import dagger.Binds
@@ -35,4 +37,8 @@ abstract class RepositoryModule {
   @Binds @Singleton abstract fun bindLocationClient(impl: DefaultLocationClient): LocationClient
 
   @Binds @Singleton abstract fun bindSyncRepository(impl: DefaultSyncRepository): SyncRepository
+
+  @Binds
+  @Singleton
+  abstract fun bindNotificationRepository(impl: DefaultNotificationRepository): NotificationRepository
 }

@@ -147,4 +147,9 @@
     <string name="project_status_in_progress">En cours</string>
     <string name="project_status_completed">Terminé</string>
     <string name="project_status_cancelled">Annulé</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_empty">Aucune notification</string>
+    <string name="home_notifications">Notifications (%1$d)</string>
 </resources>

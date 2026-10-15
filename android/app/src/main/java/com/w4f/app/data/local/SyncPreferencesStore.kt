@@ -30,6 +30,16 @@ class SyncPreferencesStore @Inject constructor(@ApplicationContext private val c
     context.syncDataStore.edit { it[cursorKey] = cursor }
   }
 
+  /** Must run whenever the Room database is recreated (a destructive
+   * migration, see `DatabaseModule`) — found on-device: the cursor lives in
+   * a separate DataStore that survives a Room wipe, so without this the
+   * next pull would only return rows changed *after* the old cursor,
+   * silently never re-fetching anything that hasn't changed since — a
+   * permanent, invisible data loss for the moqaddem's own dossier list. */
+  suspend fun clearCursor() {
+    context.syncDataStore.edit { it.remove(cursorKey) }
+  }
+
   suspend fun getWifiOnlyUpload(): Boolean =
     context.syncDataStore.data.map { it[wifiOnlyUploadKey] ?: true }.first()
 

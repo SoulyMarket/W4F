@@ -10,3 +10,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object NewReport : NavKey
 
 @Serializable data class DossierDetail(val reportId: String) : NavKey
+
+@Serializable data object Notifications : NavKey
