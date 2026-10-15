@@ -35,6 +35,7 @@ import com.w4f.app.ui.common.labelRes
 fun HomeScreen(
   onLoggedOut: () -> Unit,
   onNewReportClick: () -> Unit,
+  onReportClick: (String) -> Unit,
   modifier: Modifier = Modifier,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -66,7 +67,9 @@ fun HomeScreen(
       )
     } else {
       LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp)) {
-        items(uiState.reports, key = { it.id }) { report -> DossierListItem(report) }
+        items(uiState.reports, key = { it.id }) { report ->
+          DossierListItem(report, onClick = { onReportClick(report.id) })
+        }
       }
     }
 
@@ -108,8 +111,8 @@ private fun SyncStatusBar(
 }
 
 @Composable
-private fun DossierListItem(report: Report) {
-  Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+private fun DossierListItem(report: Report, onClick: () -> Unit) {
+  Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier.fillMaxWidth().padding(12.dp),

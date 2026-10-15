@@ -113,4 +113,39 @@
     <string name="new_report_confirm_save">تأكيد وحفظ</string>
     <string name="new_report_save_dialog_title">تأكيد الحفظ</string>
     <string name="new_report_save_dialog_message">هل تريد حفظ هذا التبليغ؟ سيتم إرساله تلقائيا عند توفر الاتصال بالإنترنت</string>
+
+    <!-- تفاصيل الملف (Détail du dossier) -->
+    <string name="dossier_detail_title">تفاصيل الملف</string>
+    <string name="dossier_detail_loading_error">تعذر تحميل التفاصيل، تحقق من اتصالك بالإنترنت</string>
+    <string name="dossier_detail_data_section">البيانات</string>
+    <string name="dossier_detail_media_section">الوسائط</string>
+    <string name="dossier_detail_no_media">لا توجد وسائط مرفقة</string>
+    <string name="dossier_detail_priority_section">الأولوية</string>
+    <string name="dossier_detail_why_priority">لماذا هذه الأولوية؟</string>
+    <string name="dossier_detail_no_priority">لم يتم احتساب الأولوية بعد</string>
+    <string name="dossier_detail_validations_section">سجل التحقق</string>
+    <string name="dossier_detail_no_validations">لا يوجد سجل تحقق بعد</string>
+    <string name="dossier_detail_recheck_highlight">طُلبت إعادة التحقق</string>
+    <string name="dossier_detail_project_section">المشروع المرتبط</string>
+    <string name="dossier_detail_project_progress">نسبة التقدم: %1$d%%</string>
+
+    <string name="report_status_submitted">تم التسجيل</string>
+    <string name="report_status_under_review">قيد المراجعة</string>
+    <string name="report_status_recheck_requested">طُلبت إعادة التحقق</string>
+    <string name="report_status_validated">تم التحقق</string>
+    <string name="report_status_rejected">مرفوض</string>
+    <string name="report_status_converted_to_project">تحول إلى مشروع</string>
+
+    <string name="validation_decision_validated">تم التحقق</string>
+    <string name="validation_decision_recheck_requested">طُلبت إعادة التحقق</string>
+    <string name="validation_decision_modified">تم التحقق مع تعديل</string>
+    <string name="validation_decision_rejected">مرفوض</string>
+
+    <string name="project_status_new">جديد</string>
+    <string name="project_status_in_study">قيد الدراسة</string>
+    <string name="project_status_approved">تمت الموافقة</string>
+    <string name="project_status_in_preparation">قيد التحضير</string>
+    <string name="project_status_in_progress">قيد الإنجاز</string>
+    <string name="project_status_completed">مكتمل</string>
+    <string name="project_status_cancelled">ملغى</string>
 </resources>

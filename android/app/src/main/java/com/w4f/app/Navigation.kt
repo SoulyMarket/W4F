@@ -11,6 +11,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.w4f.app.ui.dossierdetail.DossierDetailScreen
 import com.w4f.app.ui.home.HomeScreen
 import com.w4f.app.ui.login.LoginScreen
 import com.w4f.app.ui.newreport.NewReportScreen
@@ -41,6 +42,7 @@ fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
               backStack.add(Login)
             },
             onNewReportClick = { backStack.add(NewReport) },
+            onReportClick = { reportId -> backStack.add(DossierDetail(reportId)) },
             modifier = Modifier.safeDrawingPadding().padding(16.dp),
           )
         }
@@ -48,6 +50,12 @@ fun MainNavigation(rootViewModel: RootViewModel = hiltViewModel()) {
           NewReportScreen(
             onDone = { backStack.removeLastOrNull() },
             onCancel = { backStack.removeLastOrNull() },
+            modifier = Modifier.safeDrawingPadding().padding(16.dp),
+          )
+        }
+        entry<DossierDetail> { key ->
+          DossierDetailScreen(
+            reportId = key.reportId,
             modifier = Modifier.safeDrawingPadding().padding(16.dp),
           )
         }

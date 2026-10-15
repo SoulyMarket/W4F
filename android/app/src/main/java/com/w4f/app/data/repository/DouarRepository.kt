@@ -13,9 +13,15 @@ interface DouarRepository {
    * resolution), so the local cache never needs a second, client-side
    * territory filter on top. */
   fun search(query: String): Flow<List<Douar>>
+
+  /** For display-only lookups (e.g. the dossier detail screen resolving a
+   * report's `douarId` to a name) where a one-shot read is enough. */
+  suspend fun getById(id: String): Douar?
 }
 
 class DefaultDouarRepository @Inject constructor(private val dao: DouarDao) : DouarRepository {
   override fun search(query: String): Flow<List<Douar>> =
     dao.search(query).map { entities -> entities.map { it.toDomain() } }
+
+  override suspend fun getById(id: String): Douar? = dao.getById(id)?.toDomain()
 }

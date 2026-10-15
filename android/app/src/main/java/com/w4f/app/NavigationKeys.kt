@@ -8,3 +8,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object Home : NavKey
 
 @Serializable data object NewReport : NavKey
+
+@Serializable data class DossierDetail(val reportId: String) : NavKey

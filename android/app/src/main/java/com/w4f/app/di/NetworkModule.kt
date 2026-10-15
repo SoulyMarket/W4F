@@ -4,6 +4,7 @@ import com.w4f.app.BuildConfig
 import com.w4f.app.data.local.TokenStore
 import com.w4f.app.data.remote.AuthApi
 import com.w4f.app.data.remote.MediaApi
+import com.w4f.app.data.remote.ReportApi
 import com.w4f.app.data.remote.SyncApi
 import com.w4f.app.data.remote.TokenAuthenticator
 import dagger.Module
@@ -79,4 +80,6 @@ object NetworkModule {
   @Provides @Singleton fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
 
   @Provides @Singleton fun provideMediaApi(retrofit: Retrofit): MediaApi = retrofit.create(MediaApi::class.java)
+
+  @Provides @Singleton fun provideReportApi(retrofit: Retrofit): ReportApi = retrofit.create(ReportApi::class.java)
 }

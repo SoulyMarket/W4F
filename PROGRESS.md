@@ -926,4 +926,63 @@ graceful-failure path was exercised, not an actual recording), and a real
 Wi-Fi-constrained `MediaUploadWorker` run with real media bytes (no media
 was ever captured in this session to upload).
 
+### Step 2.5, part 1 — Dossier detail screen
+
+Section 8 screen 4 ("تفاصيل الملف"): data, media, priority +
+«لماذا هذه الأولوية؟», validation history (re-verification requests
+highlighted), linked project and its progress. Tapping a dossier on Home
+now opens it (`DossierDetail(reportId)`, a `NavKey` carrying data — the
+first one in this app that isn't a bare `data object`).
+
+**Deliberately not Room-backed, unlike everything else so far** — a live
+`GET /reports/{id}` call (plus `GET /projects?report_id=` for the linked
+project; see the backend commit below). Section 8's "Room is the single
+source of truth" governs the dossier *list*, which must work fully
+offline; the *detail* view's entire purpose is the latest server state
+(priority reasoning, validation history, project progress) that only
+exists meaningfully once synced anyway, and mirroring all of that into
+Room just for an occasionally-viewed detail screen isn't worth the
+schema/sync complexity it would add. Shows a retry affordance on failure
+(e.g. offline) rather than silently rendering nothing.
+
+**Backend addition**: `GET /projects` gained a `report_id` filter —
+`Project.report_id` is unique, so this resolves at most one project, and
+there was previously no way to look up "the project for this report"
+without listing everything and filtering client-side.
+
+**Found and fixed in the same pass** (confirmed on-device, not just
+guessed from reading code): the priority breakdown's «لماذا هذه
+الأولوية؟» reasons for frequency/severity, and the
+`project_status_changed` notification, were substituting the *raw
+English* section-4 enum value (`daily`, `high`, `in_progress`) directly
+into an otherwise-localized Arabic/French sentence —
+`compute_priority()`'s `reason_params` is deliberately lang-agnostic (the
+score itself must not depend on language), so the enum value was never
+being translated before substitution. Backend fix: `enum.frequency.*`/
+`enum.severity.*`/`enum.project_status.*` i18n keys plus a second lookup
+pass in `localize_breakdown()` and a newly-shared
+`services.notifications.render_notification_message()` (previously
+duplicated almost identically in `notifications.py` and `sync.py` —
+promoted to one function since both needed the exact same fix). 197
+backend tests (was 195).
+
+Android reuses the same label-lookup pattern already established for the
+report-creation chips (`ui/common/ReportEnumLabels.kt`), extended with
+`reportStatusLabelRes()`/`validationDecisionLabelRes()`/
+`projectStatusLabelRes()` — these return `null` on an unrecognized value
+rather than guessing, falling back to the raw string rather than silently
+mislabeling something.
+
+3 new Android unit tests (`DossierDetailViewModelTest` — fetch success/
+failure/no-redundant-refetch/retry) — 55 Android unit tests total.
+Verified on-device: douar name, problem/water-source/frequency/severity
+labels, status, priority score + full localized breakdown, and the empty
+media/validations states all rendered correctly for the report created
+earlier in this session's on-device pass.
+
+Still to build for step 2.5: notifications screen (section 8 screen 5 —
+the pull response already carries localized notifications, just not
+consumed/displayed yet) and the offline-tile map (section 8 screen 6,
+MapLibre — not started).
+
 Phase 3 (Web), Phase 4 (AI) — not started.

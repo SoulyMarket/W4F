@@ -47,3 +47,41 @@ fun SeverityLevel.labelRes(): Int =
     SeverityLevel.HIGH -> R.string.severity_high
     SeverityLevel.CRITICAL -> R.string.severity_critical
   }
+
+/** Section 8, step 4's dossier detail: `status`/`decision`/project `status`
+ * arrive as the backend's own raw machine strings (section 4's StrEnum
+ * values), not a local Kotlin enum — there's nothing else on the Android
+ * side that needs to branch on them, so a lookup table is simpler than a
+ * parallel enum hierarchy. Returns null on an unrecognized value rather
+ * than guessing, so the caller can fall back to the raw string. */
+fun reportStatusLabelRes(status: String): Int? =
+  when (status) {
+    "submitted" -> R.string.report_status_submitted
+    "under_review" -> R.string.report_status_under_review
+    "recheck_requested" -> R.string.report_status_recheck_requested
+    "validated" -> R.string.report_status_validated
+    "rejected" -> R.string.report_status_rejected
+    "converted_to_project" -> R.string.report_status_converted_to_project
+    else -> null
+  }
+
+fun validationDecisionLabelRes(decision: String): Int? =
+  when (decision) {
+    "validated" -> R.string.validation_decision_validated
+    "recheck_requested" -> R.string.validation_decision_recheck_requested
+    "modified" -> R.string.validation_decision_modified
+    "rejected" -> R.string.validation_decision_rejected
+    else -> null
+  }
+
+fun projectStatusLabelRes(status: String): Int? =
+  when (status) {
+    "new" -> R.string.project_status_new
+    "in_study" -> R.string.project_status_in_study
+    "approved" -> R.string.project_status_approved
+    "in_preparation" -> R.string.project_status_in_preparation
+    "in_progress" -> R.string.project_status_in_progress
+    "completed" -> R.string.project_status_completed
+    "cancelled" -> R.string.project_status_cancelled
+    else -> null
+  }

@@ -112,4 +112,39 @@
     <string name="new_report_confirm_save">Confirmer et enregistrer</string>
     <string name="new_report_save_dialog_title">Confirmer l\'enregistrement</string>
     <string name="new_report_save_dialog_message">Voulez-vous enregistrer ce signalement ? Il sera envoyé automatiquement dès qu\'une connexion sera disponible</string>
+
+    <!-- Détail du dossier -->
+    <string name="dossier_detail_title">Détail du dossier</string>
+    <string name="dossier_detail_loading_error">Impossible de charger les détails, vérifiez votre connexion</string>
+    <string name="dossier_detail_data_section">Données</string>
+    <string name="dossier_detail_media_section">Médias</string>
+    <string name="dossier_detail_no_media">Aucun média joint</string>
+    <string name="dossier_detail_priority_section">Priorité</string>
+    <string name="dossier_detail_why_priority">Pourquoi cette priorité ?</string>
+    <string name="dossier_detail_no_priority">La priorité n\'a pas encore été calculée</string>
+    <string name="dossier_detail_validations_section">Historique de validation</string>
+    <string name="dossier_detail_no_validations">Aucun historique de validation</string>
+    <string name="dossier_detail_recheck_highlight">Nouvelle vérification demandée</string>
+    <string name="dossier_detail_project_section">Projet lié</string>
+    <string name="dossier_detail_project_progress">Progression : %1$d%%</string>
+
+    <string name="report_status_submitted">Enregistré</string>
+    <string name="report_status_under_review">En cours d\'examen</string>
+    <string name="report_status_recheck_requested">Nouvelle vérification demandée</string>
+    <string name="report_status_validated">Validé</string>
+    <string name="report_status_rejected">Rejeté</string>
+    <string name="report_status_converted_to_project">Transformé en projet</string>
+
+    <string name="validation_decision_validated">Validé</string>
+    <string name="validation_decision_recheck_requested">Nouvelle vérification demandée</string>
+    <string name="validation_decision_modified">Validé avec modification</string>
+    <string name="validation_decision_rejected">Rejeté</string>
+
+    <string name="project_status_new">Nouveau</string>
+    <string name="project_status_in_study">À l\'étude</string>
+    <string name="project_status_approved">Approuvé</string>
+    <string name="project_status_in_preparation">En préparation</string>
+    <string name="project_status_in_progress">En cours</string>
+    <string name="project_status_completed">Terminé</string>
+    <string name="project_status_cancelled">Annulé</string>
 </resources>
