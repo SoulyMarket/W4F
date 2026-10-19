@@ -1039,4 +1039,92 @@ MapLibre — not started; likely the largest remaining piece, and true
 *offline* tile packs specifically may need scoping down for a prototype
 without real tile data to bundle).
 
+### Step 2.5, part 3 — Map (section 8 screen 6, الخريطة)
+
+Earlier doubt (see part 2's note above) turned out wrong after actually
+reading MapLibre Android 11.8.1's API instead of assuming: it ships a real
+`OfflineManager`/`OfflineRegion`/`OfflineTilePyramidRegionDefinition` API
+that downloads and caches genuine map tiles for a chosen bounding box from
+an online source, then serves them from its own on-disk cache once
+offline. No bundled static tile data needed — this is a real offline-tiles
+implementation, not a documented simplification.
+
+**Data scope ruling**: `GET /dashboard/map` (built in step 1.10) is
+manager-only (`require_roles(UserRole.MANAGER)`, section 1: "dashboard and
+map" is explicitly the manager's role, not the moqaddem's) — the Android
+app is the moqaddem's app, so this screen cannot call it. Built entirely
+from data already cached locally instead: `DouarEntity` (lat/lon, from
+`/sync/pull`) joined in-memory with `ReportEntity` (serverStatus/
+serverScore, also from `/sync/pull` — the moqaddem's *own* reports only,
+section 5). This matches the spec's own wording, "my douars with status
+colors" — genuinely "mine", not the whole territory's reports, since
+that's all a moqaddem's phone ever has. No backend changes were needed.
+
+**Marker status, per douar** — the status of that douar's most recently
+collected report (ties broken by recency, mirroring the backend's own
+"most recent report per douar" convention in
+`services/dashboard.py:reports_by_douar`): no report → gray (لا يوجد
+بلاغ); not yet synced → blue (في انتظار المزامنة); submitted/
+under_review/recheck_requested → orange (قيد المراجعة); validated with
+score ≥ 70 → red (أولوية عالية — 70 is the same
+`_PRIORITY_DOUAR_THRESHOLD` the backend dashboard uses, kept in sync by
+hand since the two codebases don't share constants); validated below 70 →
+amber (تم التحقق); rejected → dark gray (مرفوض); converted_to_project →
+green (مشروع قيد الإنجاز). Rendered as a `GeoJsonSource` + `CircleLayer`
+with `circleColor` driven by an `Expression.switchCase` on a `status`
+GeoJSON property, rather than the Mapbox/MapLibre annotation plugin
+(`CircleManager`/`SymbolManager`) — confirmed via decompiling the AAR's
+`classes.jar` that the annotation-plugin classes aren't even on the
+classpath (a separate artifact, not a dependency here), and the Style/
+Expression approach is the more idiomatic modern one anyway since it
+supports this kind of data-driven styling directly.
+
+Tapping a marker queries rendered features at that screen point
+(`MapLibreMap.queryRenderedFeatures`) and shows a small card with the
+douar's name, status, and score. A "تنزيل للعمل بدون اتصال" button computes
+a padded bounding box over every visible marker and downloads that region
+via `OfflineManager.createOfflineRegion` against the public, keyless
+`https://demotiles.maplibre.org/style.json` demo style (chosen since the
+project has no tile-hosting contract of its own — section 8 only
+specifies "offline tiles for my territory", not a specific base style);
+progress and completion are reported through `OfflineRegion`'s own
+observer callback. `MapViewModel` only holds the pure, unit-tested
+douar+report → marker classification (`buildMarkers()`); everything
+MapLibre-specific (the `MapView`, the offline download, tap handling) is
+native-backed and lives directly in `MapScreen.kt`'s composable, verified
+on-device rather than in a Robolectric test — the same split already used
+for CameraX in `EvidenceStep`, for the same reason.
+
+**Bug found and fixed before it ever reached a device**: initially called
+`MapLibre.getInstance(context)` once in `W4FApplication.onCreate()`
+(seemingly the right place — "initialize before any MapView"). This broke
+13 *unrelated* existing Robolectric tests (`DouarDaoTest`,
+`NotificationDaoTest`, `ReportDaoTest`, `MediaCompressorTest`) with
+`UnsatisfiedLinkError` on MapLibre's native classes — Robolectric
+instantiates the real `W4FApplication` for every Context-based test, and
+that now tried to load a native library the JVM test environment doesn't
+have. Moved the call into `MapScreen.kt`'s `MapLibreMapView` composable
+instead (runs only when the map screen is actually shown on a real
+device); all 71 unit tests pass again. A reminder that "initialize in
+Application.onCreate" isn't automatically the safe default in a codebase
+that leans on Robolectric for its Context-based tests.
+
+**Not yet verified on-device** (noted honestly, not glossed over): the
+MSI App Player emulator wasn't running when this piece was finished, and
+on-device verification was explicitly deferred rather than blocking on
+reopening it. Compiles cleanly (`compileDebugKotlin`), the debug APK
+builds (`assembleDebug`), and all 71 unit tests pass (63 prior + 8 new
+`MapViewModelTest` cases covering every status-classification branch and
+the null-lat/lon filter), but the actual map rendering, marker tap
+behavior, and the offline-download flow have only been reasoned through
+against the decompiled API, not watched running. Next session should
+install the APK and confirm: markers render with the right colors, tapping
+one shows the right info card, "تنزيل للعمل بدون اتصال" actually downloads
+and the map still renders after the emulator's network is turned off.
+
+8 new Android unit tests (`MapViewModelTest`) — 71 Android unit tests
+total.
+
+This closes out section 9's step 2.5 and, with it, Phase 2 (Android) as a
+whole per the build order — every screen in section 8's list now exists.
 Phase 3 (Web), Phase 4 (AI) — not started.

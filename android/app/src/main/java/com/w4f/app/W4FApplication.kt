@@ -18,6 +18,14 @@ class W4FApplication : Application(), Configuration.Provider {
 
   override fun onCreate() {
     super.onCreate()
+    // MapLibre.getInstance() is NOT called here on purpose: it loads a
+    // native library that doesn't exist in the Robolectric/JVM unit test
+    // environment, and Robolectric instantiates this real Application for
+    // every Context-based test (DouarDaoTest, NotificationDaoTest, etc.) —
+    // confirmed on this exact change (13 unrelated tests failed with
+    // UnsatisfiedLinkError on MapLibre native classes until this was
+    // moved into the map screen itself, step 2.5's map, which never runs
+    // under Robolectric). See `ui/map/MapScreen.kt`.
     syncScheduler.schedulePeriodicSync()
   }
 }

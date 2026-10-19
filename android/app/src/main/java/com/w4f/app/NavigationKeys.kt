@@ -12,3 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class DossierDetail(val reportId: String) : NavKey
 
 @Serializable data object Notifications : NavKey
+
+// Named MapRoute, not Map — a bare `Map` in this package would shadow
+// `kotlin.collections.Map`'s implicit default import for every file here.
+@Serializable data object MapRoute : NavKey

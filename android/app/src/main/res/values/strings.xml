@@ -153,4 +153,21 @@
     <string name="notifications_title">الإشعارات</string>
     <string name="notifications_empty">لا توجد إشعارات</string>
     <string name="home_notifications">الإشعارات (%1$d)</string>
+
+    <!-- الخريطة (Carte) -->
+    <string name="home_map">الخريطة</string>
+    <string name="map_title">الخريطة</string>
+    <string name="map_download_offline">تنزيل للعمل بدون اتصال</string>
+    <string name="map_download_hint">نزّل خريطة منطقتي للعمل بدون اتصال</string>
+    <string name="map_downloading">جارٍ التنزيل…</string>
+    <string name="map_download_complete">متوفرة للعمل بدون اتصال</string>
+    <string name="map_download_error">تعذر التنزيل، حاول مرة أخرى</string>
+    <string name="map_marker_score">درجة الأولوية: %1$d</string>
+    <string name="map_status_no_reports">لا يوجد بلاغ</string>
+    <string name="map_status_pending_sync">في انتظار المزامنة</string>
+    <string name="map_status_awaiting_review">قيد المراجعة</string>
+    <string name="map_status_validated">تم التحقق</string>
+    <string name="map_status_high_priority">أولوية عالية</string>
+    <string name="map_status_project_underway">مشروع قيد الإنجاز</string>
+    <string name="map_status_rejected">مرفوض</string>
 </resources>

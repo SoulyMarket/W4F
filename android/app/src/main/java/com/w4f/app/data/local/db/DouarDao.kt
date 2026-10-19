@@ -27,4 +27,9 @@ interface DouarDao {
   fun search(query: String): Flow<List<DouarEntity>>
 
   @Query("SELECT * FROM douars WHERE id = :id") suspend fun getById(id: String): DouarEntity?
+
+  /** Section 8, screen 6 (الخريطة): every cached douar, markers included
+   * whether or not they have a known lat/lon — the repository layer is
+   * responsible for filtering those out before building map geometry. */
+  @Query("SELECT * FROM douars") fun observeAll(): Flow<List<DouarEntity>>
 }

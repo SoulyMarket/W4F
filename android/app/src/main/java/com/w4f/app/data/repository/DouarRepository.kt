@@ -17,6 +17,10 @@ interface DouarRepository {
   /** For display-only lookups (e.g. the dossier detail screen resolving a
    * report's `douarId` to a name) where a one-shot read is enough. */
   suspend fun getById(id: String): Douar?
+
+  /** Section 8, screen 6 (الخريطة) — every cached douar, unfiltered; the
+   * map screen itself drops entries with no lat/lon before drawing. */
+  fun observeAll(): Flow<List<Douar>>
 }
 
 class DefaultDouarRepository @Inject constructor(private val dao: DouarDao) : DouarRepository {
@@ -24,4 +28,7 @@ class DefaultDouarRepository @Inject constructor(private val dao: DouarDao) : Do
     dao.search(query).map { entities -> entities.map { it.toDomain() } }
 
   override suspend fun getById(id: String): Douar? = dao.getById(id)?.toDomain()
+
+  override fun observeAll(): Flow<List<Douar>> =
+    dao.observeAll().map { entities -> entities.map { it.toDomain() } }
 }

@@ -152,4 +152,21 @@
     <string name="notifications_title">Notifications</string>
     <string name="notifications_empty">Aucune notification</string>
     <string name="home_notifications">Notifications (%1$d)</string>
+
+    <!-- Carte -->
+    <string name="home_map">Carte</string>
+    <string name="map_title">Carte</string>
+    <string name="map_download_offline">Télécharger pour une utilisation hors ligne</string>
+    <string name="map_download_hint">Téléchargez la carte de mon territoire pour une utilisation hors ligne</string>
+    <string name="map_downloading">Téléchargement…</string>
+    <string name="map_download_complete">Disponible hors ligne</string>
+    <string name="map_download_error">Échec du téléchargement, réessayez</string>
+    <string name="map_marker_score">Score de priorité : %1$d</string>
+    <string name="map_status_no_reports">Aucun signalement</string>
+    <string name="map_status_pending_sync">En attente de synchronisation</string>
+    <string name="map_status_awaiting_review">En cours d\'examen</string>
+    <string name="map_status_validated">Validé</string>
+    <string name="map_status_high_priority">Priorité élevée</string>
+    <string name="map_status_project_underway">Projet en cours</string>
+    <string name="map_status_rejected">Rejeté</string>
 </resources>

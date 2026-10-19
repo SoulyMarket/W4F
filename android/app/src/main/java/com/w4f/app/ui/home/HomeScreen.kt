@@ -37,6 +37,7 @@ fun HomeScreen(
   onNewReportClick: () -> Unit,
   onReportClick: (String) -> Unit,
   onNotificationsClick: () -> Unit,
+  onMapClick: () -> Unit,
   modifier: Modifier = Modifier,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -53,6 +54,7 @@ fun HomeScreen(
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.weight(1f),
       )
+      TextButton(onClick = onMapClick) { Text(stringResource(R.string.home_map)) }
       TextButton(onClick = onNotificationsClick) {
         Text(stringResource(R.string.home_notifications, uiState.unreadNotificationCount))
       }
