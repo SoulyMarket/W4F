@@ -26,5 +26,40 @@
     "moqaddem_notice": "هذا التطبيق مخصص لتطبيق الهاتف — لا توجد واجهة ويب لهذا الدور",
     "welcome": "مرحبًا، {{name}}",
     "role_label": "الدور: {{role}}"
+  },
+  "status": {
+    "report": {
+      "submitted": "تم التسجيل",
+      "under_review": "قيد المراجعة",
+      "recheck_requested": "طُلبت إعادة التحقق",
+      "validated": "تم التحقق",
+      "rejected": "مرفوض",
+      "converted_to_project": "تحول إلى مشروع"
+    },
+    "project": {
+      "new": "جديد",
+      "in_study": "قيد الدراسة",
+      "approved": "تمت الموافقة",
+      "in_preparation": "قيد التحضير",
+      "in_progress": "قيد الإنجاز",
+      "completed": "مكتمل",
+      "cancelled": "ملغى"
+    }
+  },
+  "dashboard": {
+    "title": "لوحة القيادة",
+    "total_douars": "عدد الدواوير",
+    "reports_by_status": "البلاغات حسب الحالة",
+    "projects_by_status": "المشاريع حسب الحالة",
+    "priority_douars": "دواوير ذات أولوية عالية",
+    "priority_douars_empty": "لا توجد دواوير ذات أولوية عالية حاليًا",
+    "priority_douars_hint": "درجة الأولوية ≥ 70",
+    "recurring_problem_douars": "دواوير بمشاكل متكررة",
+    "recurring_problem_douars_empty": "لا توجد دواوير بمشاكل متكررة حاليًا",
+    "recurring_problem_douars_hint": "3 بلاغات أو أكثر خلال 12 شهرًا",
+    "score": "الدرجة",
+    "report_count": "عدد البلاغات",
+    "no_data": "لا توجد بيانات",
+    "loading_error": "تعذر تحميل لوحة القيادة"
   }
 }

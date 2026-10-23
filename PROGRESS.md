@@ -1214,6 +1214,63 @@ cautious about), `npm run build`, and `npx vitest run` (9/9 passing: the
 API client's refresh/retry/dedup logic, and `AuthProvider`'s four auth
 state transitions) all pass clean.
 
-Not yet built: dashboard summary, map, reports list/detail with «لماذا
-هذه الأولوية؟», expert validation screen, project board, admin users/
+### Step 3.2 — Dashboard summary (manager's landing page)
+
+`GET /dashboard/summary` consumed via TanStack Query
+(`features/dashboard/dashboardApi.ts`). Manager's `/` now renders this for
+real, replacing the step-3.1 stub — admin/expert keep the stub until their
+own screens are built. KPI cards (total douars, priority-douar count,
+recurring-problem-douar count), two status breakdowns (reports/projects)
+as horizontal bar charts, and the two douar lists (priority ≥ 70,
+recurring ≥ 3 reports/12 months) with localized douar names
+(`name_ar`/`name_fr` picked by the active UI language).
+
+**Status labels**: `lib/statusLabels.ts` — a lookup table keyed by the
+backend's raw StrEnum values (never a parallel TS enum, so it can't drift
+from section 4), mirroring the Android app's own
+`ReportEnumLabels.kt` pattern. Falls back to the raw string for an
+unrecognized value rather than guessing, same rule as Android's
+`reportStatusLabelRes()`.
+
+**Chart RTL mirroring** (section 2.1: "charts... must also flip correctly"
+— an explicit requirement, not incidental): built `StatusBarChart` on
+Recharts' `BarChart`/`layout="vertical"`, and verified Recharts 3.10.1's
+actual `XAxis`/`YAxis` prop types (`reversed`, `orientation`) against the
+installed package's `.d.ts` files before using them, rather than assuming
+the well-known v2 API carried over unchanged into this major-version
+bump — same "verify an unfamiliar/updated library API before coding"
+discipline the MapLibre work established, applied here to a smaller but
+real risk (v2→v3 is a major bump). For Arabic: `XAxis reversed`, `YAxis
+orientation="right"`, value labels (`LabelList`) on the left — bars grow
+right-to-left, category axis sits where Arabic reading starts. Mirrored
+for French. Verified visually in the browser in both directions (not just
+reasoned through): confirmed bars, axis position and value-label position
+all flip together correctly.
+
+Also per the chart a11y notes surfaced while building this (`ui-ux-pro-max`
+`--domain chart`): every bar's numeric value is always shown as visible
+text (`LabelList`), not hover-only — `Tooltip` is additive, not the only
+way to read a value — and color is never the sole signal (every bar also
+carries its own text label).
+
+**Known deferred item, not fixed now**: the production bundle is ~706 KB
+(mostly `recharts` + `maplibre-gl`, the latter unused until the map
+screen is built) and Vite's own build warns past 500 KB. Code-splitting
+(route-level `React.lazy`) is the right fix but premature with only two
+real screens — worth doing once more screens exist and before Phase 3
+is considered done, not before.
+
+15 Vitest tests total (6 new: `statusLabels` round-trips every known
+status in both languages plus the raw-fallback case; `DashboardPage`
+renders KPIs/empty-state/retry-on-error against a mocked API response).
+`tsc -b`, `oxlint`, `npm run build` all clean. Verified against the live
+backend as the seeded manager account in both languages — real counts (10
+douars, 2 recurring-problem douars, 17 submitted + 1 validated report,
+empty projects breakdown correctly showing the empty-state message)
+rendered correctly, charts flipped correctly in both directions, no
+console errors, no failed requests.
+
+Not yet built: map (colored by priority, offline tiles out of scope for
+web — that's the Android screen), reports list/detail with «لماذا هذه
+الأولوية؟», expert validation screen, project board, admin users/
 territories/audit, scoring weights editor. Phase 4 (AI) — not started.

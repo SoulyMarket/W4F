@@ -26,5 +26,40 @@
     "moqaddem_notice": "Ce rôle utilise l'application mobile — il n'y a pas d'interface web pour lui",
     "welcome": "Bonjour, {{name}}",
     "role_label": "Rôle : {{role}}"
+  },
+  "status": {
+    "report": {
+      "submitted": "Enregistré",
+      "under_review": "En cours d'examen",
+      "recheck_requested": "Nouvelle vérification demandée",
+      "validated": "Validé",
+      "rejected": "Rejeté",
+      "converted_to_project": "Transformé en projet"
+    },
+    "project": {
+      "new": "Nouveau",
+      "in_study": "À l'étude",
+      "approved": "Approuvé",
+      "in_preparation": "En préparation",
+      "in_progress": "En cours",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "total_douars": "Nombre de douars",
+    "reports_by_status": "Signalements par statut",
+    "projects_by_status": "Projets par statut",
+    "priority_douars": "Douars à forte priorité",
+    "priority_douars_empty": "Aucun douar à forte priorité actuellement",
+    "priority_douars_hint": "Score de priorité ≥ 70",
+    "recurring_problem_douars": "Douars à problèmes récurrents",
+    "recurring_problem_douars_empty": "Aucun douar à problèmes récurrents actuellement",
+    "recurring_problem_douars_hint": "3 signalements ou plus sur 12 mois",
+    "score": "Score",
+    "report_count": "Nombre de signalements",
+    "no_data": "Aucune donnée",
+    "loading_error": "Impossible de charger le tableau de bord"
   }
 }

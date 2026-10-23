@@ -1,16 +1,19 @@
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../features/auth/AuthContext'
+import { DashboardPage } from '../features/dashboard/DashboardPage'
 
 // Placeholder landing content, replaced screen-by-screen as Phase 3's
-// real pages are built (dashboard summary for manager, reports list for
-// expert, users/territories/audit for admin). Section 1: the moqaddem
-// role has no web screens at all — "Uses the Android app only" — so it
-// gets a permanent notice instead of a placeholder that will later
-// become a real page.
+// real pages are built (reports list for expert, users/territories/audit
+// for admin — manager's own landing is now the real dashboard, step
+// 3.2). Section 1: the moqaddem role has no web screens at all — "Uses
+// the Android app only" — so it gets a permanent notice instead of a
+// placeholder that will later become a real page.
 export function RoleHome() {
   const { t } = useTranslation()
   const { user } = useAuth()
   if (!user) return null
+
+  if (user.role === 'manager') return <DashboardPage />
 
   if (user.role === 'moqaddem') {
     return <p className="text-foreground">{t('home.moqaddem_notice')}</p>
