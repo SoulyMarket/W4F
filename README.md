@@ -35,15 +35,36 @@ Needed if Docker/virtualization isn't available on your machine.
    uvicorn app.main:app --reload
    ```
 
+## Web dashboard
+
+Needs the backend running (see above) — the dev server's default
+`VITE_API_BASE_URL` points at `http://localhost:8000/api/v1`, and the
+backend's default `CORS_ORIGINS` already allows `http://localhost:5173`.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Demo accounts (seeded by `python -m app.seed`), all with password
+`DemoPass1234`: `admin@w4f.ma`, `manager@w4f.ma`, `expert@w4f.ma`. The
+fourth seeded role, `moqaddem@w4f.ma`, is Android-only — the web app shows
+it a notice instead of a dashboard (section 1: moqaddem "uses the Android
+app only").
+
 ## Tests
 
 ```bash
 cd backend
 pytest
+
+cd web
+npm test
 ```
 
-Tests that touch the database use `TEST_DATABASE_URL` from `.env` and roll
-back each test in a transaction — no fixtures are left behind.
+Backend tests that touch the database use `TEST_DATABASE_URL` from `.env`
+and roll back each test in a transaction — no fixtures are left behind.
 
 ## Repository layout
 

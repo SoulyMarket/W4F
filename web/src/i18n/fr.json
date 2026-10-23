@@ -1,0 +1,30 @@
+{
+  "app": {
+    "name": "W4F — Suivi des points d'eau"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "retry": "Réessayer",
+    "logout": "Déconnexion",
+    "language": "Langue",
+    "error_generic": "Une erreur inattendue est survenue"
+  },
+  "login": {
+    "title": "Connexion",
+    "email_label": "E-mail",
+    "password_label": "Mot de passe",
+    "submit": "Connexion",
+    "submitting": "Connexion en cours…"
+  },
+  "role": {
+    "admin": "Administrateur",
+    "manager": "Responsable",
+    "expert": "Expert",
+    "moqaddem": "Moqaddem"
+  },
+  "home": {
+    "moqaddem_notice": "Ce rôle utilise l'application mobile — il n'y a pas d'interface web pour lui",
+    "welcome": "Bonjour, {{name}}",
+    "role_label": "Rôle : {{role}}"
+  }
+}

@@ -1127,4 +1127,93 @@ total.
 
 This closes out section 9's step 2.5 and, with it, Phase 2 (Android) as a
 whole per the build order — every screen in section 8's list now exists.
-Phase 3 (Web), Phase 4 (AI) — not started.
+
+## Phase 3 — Web dashboard
+
+Section 9 doesn't itemize Phase 3 into numbered sub-steps the way Phases 1
+and 2 are (section 9's own text is a single bullet block), so it's being
+built the same way those phases actually proceeded in practice: scaffold
+and auth first, then one real screen at a time, tests/build passing and a
+commit after each.
+
+### Step 3.1 — Scaffold, i18n, auth, role-based landing
+
+`npm create vite@latest . -- --template react-ts` in `web/` (React 19,
+Vite 8, TypeScript 6). Added per section 6: `react-router-dom`,
+`@tanstack/react-query`, `maplibre-gl`, `recharts`, `i18next` +
+`react-i18next`, Tailwind v4 (`@tailwindcss/vite`, token-based via
+`@theme` in `index.css` — no `tailwind.config.js` needed in v4). Test
+tooling (not in section 6, but matching the rigor already established for
+backend/Android): Vitest + React Testing Library + jsdom.
+
+**Design system**: generated via the `ui-ux-pro-max` skill
+(`--design-system "government water utility admin dashboard serious
+data-dense rtl arabic"`, density 7/motion 3/variance 4) and persisted to
+`web/design-system/w4f-dashboard/MASTER.md` — "Data-Dense Dashboard"
+style, water-utility blue/cyan palette (`#0284C7` primary). Overrode the
+tool's default typography pick (Fira Code/Fira Sans — no Arabic glyphs)
+with Noto Sans Arabic (ar) + Fira Sans (fr), swapped via `html[dir]` so
+the typeface never visibly changes mid-sentence in a bilingual UI — same
+reasoning as the Android app's own bundled-Arabic-font choice. Dark-mode
+token values aren't something the generator computes (light-mode only);
+derived by hand (lighter primary/accent hues, deep navy background, kept
+≥4.5:1 contrast) and gated behind `prefers-color-scheme`/`data-theme`.
+
+**i18n**: `ar`/`fr` resource files, `ar` hard default regardless of
+browser language (section 2.1 — browser-language auto-detection was
+deliberately *not* wired in, to avoid a French browser silently
+overriding the spec's own default). `<html lang dir>` set reactively on
+every language change. Server-side error/notification text needs no
+client-side translation layer at all — the backend already localizes
+`message` via the `Accept-Language` header the API client sends on every
+request (kept in sync with the active UI language), so the web UI only
+owns its own labels/buttons/nav strings.
+
+**Auth**: `POST /auth/login` → store `{access_token, refresh_token}` →
+`GET /auth/me` → `AuthContext`. Token storage is `localStorage`
+(documented limitation, not glossed over: the backend only issues bearer
+tokens in the JSON response body, not an httpOnly cookie, so there's
+nowhere else for a browser client to keep them that JS doesn't also have
+to read to attach `Authorization` — a production deployment would want
+the backend to set an httpOnly/SameSite cookie instead). `apiFetch()`
+auto-refreshes once on a 401 and retries the original request, de-duping
+concurrent refreshes behind one in-flight promise so simultaneous 401s
+don't each rotate the one-time-use refresh token and revoke each other —
+the same class of gap the Android `TokenAuthenticator` closed in step
+2.2, just on the other client.
+
+**Role-based landing**: `/` renders role-specific content directly
+(no placeholder routes for screens that don't exist yet) — manager/
+admin/expert get a welcome stub (replaced screen-by-screen as the real
+pages below get built), moqaddem gets a permanent notice instead of a
+placeholder, since section 1 is explicit that role "uses the Android app
+only" and will never get a web screen.
+
+**Bug found and fixed via on-device — actually on-browser — verification
+(not just reasoned through)**: `AuthContext.logout()` originally cleared
+the stored tokens *before* calling `POST /auth/logout`, so that request
+went out with no `Authorization` header and the backend (which requires
+one) rejected it with 401 every time — confirmed via the browser's own
+network log while testing the real login→logout flow against the live
+backend. Fixed by awaiting the server call first and clearing local state
+after; re-verified with two full login→logout cycles against the real
+backend, both ending 200/200/200/200 (login, me, logout, OPTIONS). A
+reminder that "clear local state, then best-effort notify the server" is
+the wrong order whenever the notification needs the state being cleared.
+
+**Verified end-to-end in the browser** (`.claude/launch.json` added, dev
+server + the already-running backend): all four demo accounts
+(admin/manager/expert/moqaddem) logged in and showed the right
+role-specific content; language switch flips `dir`/font/layout correctly
+in both directions (manual switch, and the server's `preferred_language`
+overriding it again on login); logout round-trips correctly after the
+fix above; `npx tsc -b`, `npx oxlint` (0 errors, 2 accepted style
+warnings — a co-located context+hook export and a mount-time data fetch,
+both intentional, common React patterns the linter is generically
+cautious about), `npm run build`, and `npx vitest run` (9/9 passing: the
+API client's refresh/retry/dedup logic, and `AuthProvider`'s four auth
+state transitions) all pass clean.
+
+Not yet built: dashboard summary, map, reports list/detail with «لماذا
+هذه الأولوية؟», expert validation screen, project board, admin users/
+territories/audit, scoring weights editor. Phase 4 (AI) — not started.

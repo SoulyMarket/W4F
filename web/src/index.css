@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+/* Design tokens — design-system/w4f-dashboard/MASTER.md ("Data-Dense
+   Dashboard", water-utility blue/cyan). Tailwind v4 turns every
+   `--color-*` under `@theme` into utilities (bg-primary, text-foreground,
+   border-border, ...). Dark values aren't in MASTER.md (the generator
+   only computes light-mode tokens) — derived by hand: lighter
+   primary/accent hues and a deep navy background, same hue family, kept
+   at or above 4.5:1 contrast. */
+@theme {
+  --color-primary: #0284c7;
+  --color-on-primary: #ffffff;
+  --color-secondary: #06b6d4;
+  --color-accent: #0891b2;
+  --color-background: #f0f9ff;
+  --color-foreground: #0f172a;
+  --color-muted: #eff7fb;
+  --color-muted-foreground: #51657a;
+  --color-border: #e0f0f8;
+  --color-destructive: #dc2626;
+  --color-ring: #0284c7;
+
+  --font-sans: 'Fira Sans', 'Noto Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    --color-primary: #38bdf8;
+    --color-on-primary: #0b1220;
+    --color-secondary: #22d3ee;
+    --color-accent: #2dd4bf;
+    --color-background: #0b1220;
+    --color-foreground: #e2e8f0;
+    --color-muted: #111c2e;
+    --color-muted-foreground: #93a4bb;
+    --color-border: #1e293b;
+    --color-destructive: #f87171;
+    --color-ring: #38bdf8;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-primary: #38bdf8;
+  --color-on-primary: #0b1220;
+  --color-secondary: #22d3ee;
+  --color-accent: #2dd4bf;
+  --color-background: #0b1220;
+  --color-foreground: #e2e8f0;
+  --color-muted: #111c2e;
+  --color-muted-foreground: #93a4bb;
+  --color-border: #1e293b;
+  --color-destructive: #f87171;
+  --color-ring: #38bdf8;
+}
+
+/* Arabic is the default locale (section 2.1) and gets the Arabic-capable
+   face first; French swaps the order so Latin text doesn't fall through
+   to Noto Sans Arabic's (weaker) Latin coverage. */
+html[dir='rtl'] {
+  --font-sans: 'Noto Sans Arabic', 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* prefers-reduced-motion is respected globally rather than per-component
+   (pre-delivery checklist) — every transition/animation this app defines
+   collapses to effectively instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
