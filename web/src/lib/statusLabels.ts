@@ -32,3 +32,10 @@ export function reportStatusLabel(t: TFunction, status: string): string {
 export function projectStatusLabel(t: TFunction, status: string): string {
   return t(`status.project.${status}`, { defaultValue: status })
 }
+
+export const VALIDATION_DECISIONS = ['validated', 'recheck_requested', 'modified', 'rejected'] as const
+export type ValidationDecision = (typeof VALIDATION_DECISIONS)[number]
+
+export function validationDecisionLabel(t: TFunction, decision: string): string {
+  return t(`status.validation_decision.${decision}`, { defaultValue: decision })
+}

@@ -1270,7 +1270,79 @@ empty projects breakdown correctly showing the empty-state message)
 rendered correctly, charts flipped correctly in both directions, no
 console errors, no failed requests.
 
+### Step 3.3 — Reports list + detail with «لماذا هذه الأولوية؟»
+
+`GET /reports` (status filter, sort-by-score toggle, pagination) and
+`GET /reports/{id}` consumed via TanStack Query. Available to admin/
+manager/expert — backend-side `_require_any = require_roles(*list(UserRole))`
+technically allows moqaddem too, but section 1 gives moqaddem no web
+screens at all, so a new `RequireNonMoqaddem` route guard bounces that
+role back to `/` (defense in depth on top of the backend's own territory
+scoping, not a replacement for it). First real navigation: `NavBar` in
+`AppLayout`, link-per-screen gated by role, grown as each screen lands.
+
+**Field/status labels**: `lib/reportFieldLabels.ts` (water source, problem
+type, frequency, severity) and `statusLabels.ts`'s new
+`validationDecisionLabel()` — copied verbatim from the Android app's
+`values{,-fr}/strings.xml` rather than re-translated from scratch, so the
+web and Android apps say the exact same thing for the exact same enum
+value.
+
+**Douar name resolution**: reports only carry `douar_id`, not a name —
+`features/douars/douarsApi.ts`'s `useDouarsLookup()` fetches one page of
+up to 100 douars (the API's own max `page_size`) and builds an id→douar
+map client-side. Documented simplification: correct for this prototype's
+seed data (single digits of douars per territory), would need real
+pagination for a territory with more than 100.
+
+**Two real bugs found via live browser verification against the running
+backend** (not just reasoned through):
+1. The reports table's clickable rows were plain `<tr onClick>` — no
+   `role`, no `tabIndex`, invisible to the accessibility tree and
+   unreachable by keyboard. Caught by `read_page`'s own interactive-only
+   filter simply not listing them. Fixed: `role="button"`,
+   `tabIndex={0}`, `onKeyDown` (Enter/Space), a visible focus ring, and
+   an `aria-label` naming the row. Re-verified: every row now shows up as
+   a named, focusable button.
+2. The priority breakdown's `points` column showed raw IEEE-754 noise
+   straight from the backend's own JSON (`0.44999999999999996` for
+   `people_affected`) — not a web bug, but a legitimate display-only fix
+   (the value is only ever shown to a human here, never sent back
+   anywhere): `lib/formatNumber.ts`'s `formatPoints()` rounds to 2
+   decimal places for display. Verified the exact same report now shows
+   `0.45`.
+
+8 new Vitest tests (`formatDate` — including a timezone-safety case for
+date-only values written up as its own fix, see below; `formatNumber`;
+`reportFieldLabels` round-trips; `ReportsListPage`/`ReportDetailPage`
+rendering against mocked responses) — 29 total, all passing.
+
+**A third thing fixed while writing `formatDate`'s test, before it ever
+shipped** (not a live bug, caught during normal development): the
+original implementation ran every date string through `new Date(...)`
+and read back local-time getters. For a datetime that's correct, but for
+a plain `YYYY-MM-DD` value (`problem_started_on`) it isn't — that string
+parses as UTC midnight, and in any timezone behind UTC the local-time
+getters read back the *previous* day. Fixed by parsing date-only strings
+by hand (no `Date` object at all) instead of going through local-time
+conversion; low real-world impact here since the deployment's own
+timezone (Africa/Casablanca, UTC+1) doesn't trigger it, but cheap and
+correct to fix outright rather than leave as a latent bug for any future
+deployment in a different timezone.
+
+Verified end-to-end in the browser as the seeded manager account, in
+French: list renders real data (11+ reports across several douars,
+correct status-colored badges, dd/MM/yyyy dates), the status filter
+narrows the list correctly (`Validé` → exactly the 1 matching report,
+page info updates), and a validated report's detail page shows every
+field correctly labeled, the real computed priority breakdown (8 scoring
+criteria with their actual localized reasons), and its validation
+history (decision badge, date, urgency). No console errors, no failed
+requests, beyond the stale 401 console entries confirmed (again) to be
+leftover from an earlier token-refresh event, not a live issue — every
+request in this pass returned 200.
+
 Not yet built: map (colored by priority, offline tiles out of scope for
-web — that's the Android screen), reports list/detail with «لماذا هذه
-الأولوية؟», expert validation screen, project board, admin users/
+web — that's the Android screen), expert validation screen (the action
+side of what's now a read-only detail view), project board, admin users/
 territories/audit, scoring weights editor. Phase 4 (AI) — not started.

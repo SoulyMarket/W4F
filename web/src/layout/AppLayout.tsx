@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { useAuth } from '../features/auth/AuthContext'
+import { NavBar } from './NavBar'
 
 export function AppLayout() {
   const { t } = useTranslation()
@@ -27,6 +28,7 @@ export function AppLayout() {
           </button>
         </div>
       </header>
+      <NavBar />
       <main className="flex-1 p-4 sm:p-6">
         <Outlet />
       </main>
