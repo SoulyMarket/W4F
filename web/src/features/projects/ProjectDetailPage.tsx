@@ -47,7 +47,7 @@ export function ProjectDetailPage() {
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
+        <div className="min-w-0 break-words">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{project.title}</h1>
           <p className="text-sm text-muted-foreground">{douarName}</p>
         </div>

@@ -33,6 +33,10 @@ describe('apiFetch', () => {
     const [, init] = fetchMock.mock.calls[0]
     const headers = init.headers as Record<string, string>
     expect(headers.Authorization).toBe('Bearer access-1')
+    // Regression: a browser's HTTP cache doesn't vary by Authorization,
+    // so without this a different signed-in user could be served back
+    // an earlier user's cached response for the same URL — found live.
+    expect(init.cache).toBe('no-store')
     expect(headers['Accept-Language']).toBe('ar')
   })
 

@@ -71,8 +71,11 @@ describe('ReportsListPage', () => {
   it('resolves the douar name and shows the row once both requests settle', async () => {
     renderPage()
 
-    await waitFor(() => expect(screen.getByText('دوار الأمل')).toBeInTheDocument())
-    expect(screen.getByText('72')).toBeInTheDocument()
+    // Rendered twice by design: a stacked card below `sm` and a table
+    // row from `sm` up (see TableContainer's own comment) — both carry
+    // the same data, so either count as the request having resolved.
+    await waitFor(() => expect(screen.getAllByText('دوار الأمل').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('72').length).toBeGreaterThan(0)
   })
 
   it('shows the empty-state message when there are no matching reports', async () => {

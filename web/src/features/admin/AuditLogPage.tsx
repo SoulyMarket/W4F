@@ -2,7 +2,9 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
 import { inputClass, selectClass } from '../../components/formStyles'
+import { TableContainer } from '../../components/TableContainer'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { AUDIT_ACTIONS, auditActionLabel } from '../../lib/statusLabels'
@@ -76,43 +78,62 @@ export function AuditLogPage() {
       ) : data.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('admin.audit_empty')}</p>
       ) : (
-        <div
-          className="overflow-hidden rounded-xl border border-border bg-white/60 shadow-sm transition-opacity dark:bg-white/5"
-          style={{ opacity: isPlaceholderData ? 0.6 : 1 }}
-        >
-          <table className="w-full text-start text-sm">
-            <thead className="border-b border-border text-xs text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_date')}</th>
-                <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_actor')}</th>
-                <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_action')}</th>
-                <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_entity')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {data.items.map((entry, index) => {
-                const actor = entry.actor_id ? users.data?.get(entry.actor_id) : null
-                return (
-                  <motion.tr
-                    key={entry.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: Math.min(index, 10) * 0.03 }}
-                  >
-                    <td className="px-4 py-2.5 text-foreground">{formatDate(entry.created_at)}</td>
-                    <td className="px-4 py-2.5 text-foreground">
+        <div style={{ opacity: isPlaceholderData ? 0.6 : 1 }} className="transition-opacity">
+          <div className="flex flex-col gap-2 sm:hidden">
+            {data.items.map((entry, index) => {
+              const actor = entry.actor_id ? users.data?.get(entry.actor_id) : null
+              return (
+                <Card key={entry.id} index={Math.min(index, 8)}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium text-foreground">
                       {actor ? actor.full_name : entry.actor_id ? entry.actor_id : t('admin.audit_system_actor')}
-                    </td>
-                    <td className="px-4 py-2.5 text-foreground">{auditActionLabel(t, entry.action)}</td>
-                    <td className="px-4 py-2.5 text-foreground">
-                      {entry.entity_type}
-                      {entry.entity_id ? ` · ${entry.entity_id.slice(0, 8)}` : ''}
-                    </td>
-                  </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{formatDate(entry.created_at)}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {auditActionLabel(t, entry.action)} · {entry.entity_type}
+                    {entry.entity_id ? ` · ${entry.entity_id.slice(0, 8)}` : ''}
+                  </p>
+                </Card>
+              )
+            })}
+          </div>
+
+          <div className="hidden sm:block">
+            <TableContainer>
+              <thead className="border-b border-border text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_date')}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_actor')}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_action')}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t('admin.audit_column_entity')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.items.map((entry, index) => {
+                  const actor = entry.actor_id ? users.data?.get(entry.actor_id) : null
+                  return (
+                    <motion.tr
+                      key={entry.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: Math.min(index, 10) * 0.03 }}
+                    >
+                      <td className="px-4 py-2.5 text-foreground">{formatDate(entry.created_at)}</td>
+                      <td className="px-4 py-2.5 text-foreground">
+                        {actor ? actor.full_name : entry.actor_id ? entry.actor_id : t('admin.audit_system_actor')}
+                      </td>
+                      <td className="px-4 py-2.5 text-foreground">{auditActionLabel(t, entry.action)}</td>
+                      <td className="px-4 py-2.5 text-foreground">
+                        {entry.entity_type}
+                        {entry.entity_id ? ` · ${entry.entity_id.slice(0, 8)}` : ''}
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </tbody>
+            </TableContainer>
+          </div>
         </div>
       )}
 

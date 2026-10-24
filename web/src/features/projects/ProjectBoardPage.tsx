@@ -75,8 +75,8 @@ export function ProjectBoardPage() {
                       whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                       className="cursor-pointer rounded-lg border border-border bg-white/70 p-3 text-start shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring dark:bg-white/10"
                     >
-                      <p className="text-sm font-medium text-foreground">{project.title}</p>
-                      <p className="text-xs text-muted-foreground">{douarName}</p>
+                      <p className="break-words text-sm font-medium text-foreground">{project.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">{douarName}</p>
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <motion.div
                           className="h-full rounded-full bg-primary"

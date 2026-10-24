@@ -1,6 +1,5 @@
-import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { dirFor, type SupportedLanguage } from '../../i18n'
 
 export interface StatusBarChartEntry {
   status: string
@@ -9,57 +8,50 @@ export interface StatusBarChartEntry {
   color: string
 }
 
-// Section 2.1: "charts and map controls must also flip correctly" in RTL.
-// A horizontal bar chart's bars conventionally grow away from the axis
-// origin in the reading direction, so the whole chart mirrors for Arabic:
-// the category axis moves to the right (where Arabic reading starts) and
-// the value axis reverses so bars grow right-to-left.
+// Previously built on Recharts (BarChart/YAxis/LabelList with a fixed
+// 140px axis width) — found live at narrow widths: the value label
+// rendered directly on top of the category text, because Recharts
+// positions both by raw pixel offset with no awareness of the other's
+// actual rendered width, and a fixed-px axis column doesn't adapt to
+// either a narrower container or a longer Arabic label. Rebuilt as plain
+// flex rows instead: label / bar-track / value are three real flex
+// children, so the browser's own box model keeps them apart — there is
+// no coordinate math left that could place two of them on top of each
+// other. It also means no manual RTL mirroring logic (reversed axis,
+// orientation, label position) — a flex row already reads start-to-end
+// in whichever direction `dir` is, the same as any other row in the app.
 export function StatusBarChart({ data }: { data: StatusBarChartEntry[] }) {
-  const { t, i18n } = useTranslation()
-  const dir = dirFor(i18n.language as SupportedLanguage)
-  const isRtl = dir === 'rtl'
+  const { t } = useTranslation()
+  const prefersReducedMotion = useReducedMotion()
 
   if (data.length === 0) {
     return <p className="text-sm text-muted-foreground">{t('dashboard.no_data')}</p>
   }
 
+  const max = Math.max(...data.map((entry) => entry.count), 1)
+
   return (
-    <ResponsiveContainer width="100%" height={Math.max(data.length * 40, 120)}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, bottom: 4, left: 24 }}>
-        <XAxis type="number" allowDecimals={false} reversed={isRtl} hide />
-        <YAxis
-          type="category"
-          dataKey="label"
-          orientation={isRtl ? 'right' : 'left'}
-          width={140}
-          tickLine={false}
-          axisLine={false}
-          tick={{ fill: 'var(--color-foreground)', fontSize: 13 }}
-        />
-        {/* Numeric values are always shown as text on the bar itself
-            (not hover-only) per the chart a11y guidance — Tooltip is
-            still there for the exact figure on hover, not as the only
-            way to read it. */}
-        <Tooltip
-          contentStyle={{
-            background: 'var(--color-background)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 8,
-            direction: dir,
-          }}
-        />
-        <Bar dataKey="count" radius={4} isAnimationActive={false}>
-          {data.map((entry) => (
-            <Cell key={entry.status} fill={entry.color} />
-          ))}
-          <LabelList
-            dataKey="count"
-            position={isRtl ? 'left' : 'right'}
-            fill="var(--color-foreground)"
-            fontSize={13}
-          />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col gap-3">
+      {data.map((entry, index) => (
+        <div key={entry.status} className="flex items-center gap-3">
+          <span
+            className="min-w-0 shrink basis-28 truncate text-xs text-foreground"
+            title={entry.label}
+          >
+            {entry.label}
+          </span>
+          <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ backgroundColor: entry.color }}
+              initial={prefersReducedMotion ? { width: `${(entry.count / max) * 100}%` } : { width: 0 }}
+              animate={{ width: `${(entry.count / max) * 100}%` }}
+              transition={{ duration: 0.5, delay: prefersReducedMotion ? 0 : index * 0.06, ease: 'easeOut' }}
+            />
+          </div>
+          <span className="w-6 shrink-0 text-end text-xs font-semibold text-foreground">{entry.count}</span>
+        </div>
+      ))}
+    </div>
   )
 }

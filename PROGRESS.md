@@ -1580,3 +1580,105 @@ wrap without horizontal overflow, no layout breakage.
 Bundle grew to ~901 KB (gzip ~271 KB) with `framer-motion` added — the
 code-splitting item already noted as deferred in step 3.2 is now more
 worth doing, still not blocking for this prototype.
+
+### Step 3.8 — Fixing real overlap/fit bugs, found by actually looking
+
+Direct follow-up: "you didn't change anything in the frontend, change the
+layout and design, try to avoid all superposition in the text as well as
+in the translation, also make everything fit well (if its framed)." The
+step 3.7 pass was real but visually subtle; this one is about concrete,
+observed breakage, found by methodically screenshotting every screen at
+desktop/tablet/mobile widths in both languages rather than guessing. Three
+real bugs came out of that, one of them nothing to do with layout at all:
+
+**1. A cross-user data leak via the browser's own HTTP cache (backend
+bug, found while chasing what looked like a UI bug)**. The reports list
+showed raw UUIDs instead of douar names for the signed-in manager — but
+`curl`ing `/douars` with the manager's own freshly-issued token returned
+the correct 10 douars, so it wasn't a backend data problem. The browser's
+actual request to that exact URL came back `{"items": [], "total": 0}` —
+empty, matching what *admin* (no territory) had gotten from that same URL
+earlier in the session. The backend sends no `Cache-Control` header at
+all (confirmed with `curl -D -`), so a browser applies its own heuristic
+caching keyed on URL alone — it never varies by `Authorization` unless
+told to — and served the admin's old empty response back to a completely
+different signed-in user. Fixed in two places, deliberately redundant:
+`backend/app/main.py` now has a `no_store_cache_headers` middleware
+setting `Cache-Control: no-store` on every response (so this can never
+happen again for *any* client), and `web/src/lib/api.ts`'s `apiFetch`
+also now passes `cache: 'no-store'` to `fetch()` itself (so it's fixed
+immediately for any browser that already cached something, since the
+server header alone can't retroactively invalidate what's already
+cached). Two new backend regression tests
+(`tests/test_cache_headers.py`) assert the header on both an
+unauthenticated and an authenticated route — 200 backend tests now (was
+198). A one-line Vitest assertion covers the client side.
+
+**2. Real text/value overlap in the dashboard's status-breakdown
+chart**. Built on Recharts in step 3.2 (`BarChart`/`YAxis`/`LabelList`
+with a fixed 140px axis column) — at mobile width, or with a longer
+French/Arabic label, the value number rendered directly on top of the
+category text, confirmed by zooming into a screenshot. Root cause:
+Recharts positions the axis label and the bar's value label by raw pixel
+math, with neither aware of the other's actual rendered text width, and
+a fixed-px column doesn't adapt to a narrower container or a longer
+label. Rather than fight Recharts' coordinate system, `StatusBarChart`
+is now plain flex rows — label / bar-track / value as three real flex
+children (`min-w-0 shrink` on the label so it truncates with a `title`
+tooltip instead of ever colliding with its neighbors). A browser's own
+box model keeps flex siblings apart; there's no leftover coordinate math
+that could place two of them on top of each other. This also deleted the
+only remaining use of Recharts in the app, so the dependency was
+removed entirely (`npm uninstall recharts`) — if a future screen needs
+genuine chart interactivity (zoom, multi-series, etc.) it can come back
+then; this particular "category + count" breakdown is better served by
+real DOM layout than by an SVG charting library.
+
+**3. Framed content didn't actually fit — tables clipped instead of
+scrolling, headers/nav-tabs broke mid-word**. The reports/users/audit
+tables wrapped their `<table>` in a single `overflow-hidden` div (for
+the rounded corners) — which also means a table wider than its frame
+gets its extra columns silently *clipped*, not scrolled: at 375px, the
+reports table's last column (and part of the status badge column) was
+simply gone, with no visible scrollbar hinting that more content
+existed. New `components/TableContainer.tsx` separates the two
+concerns — `overflow-hidden` stays on the outer corner-rounding
+wrapper, a nested `overflow-x-auto` div handles real horizontal
+scrolling, and the table gets a `min-w-[640px]` so columns compress
+down to that point and then scroll rather than squeezing text into
+illegibility. But horizontal-scroll-with-no-affordance is still a poor
+mobile pattern on its own, so all three tables now also render as a
+stacked card list below the `sm` breakpoint (the standard responsive-
+table pattern) instead of relying on scroll at all on a phone-sized
+screen — the desktop `<table>` markup is unchanged above `sm`. Also
+fixed: the header title and the language/logout controls fighting for
+one row broke the title across two lines mid-sentence (now
+`flex-wrap` on the header, `truncate` on the title, so controls drop to
+their own row below instead); the nav bar's own tabs had the same
+problem at the word level ("Journal d'audit" literally split as
+"Journal d" / "audit" — now `flex-wrap` on the nav plus
+`whitespace-nowrap` per tab, so a tab wraps as a whole unit or not at
+all, never mid-word). Report/project titles and douar names also got
+defensive `break-words`/`truncate` where user-entered text could in
+principle overflow a fixed-width card.
+
+**Test fallout from the responsive duplication**: rendering every table
+row twice (card below `sm`, `<table>` row from `sm` up) meant several
+existing tests' `getByText(...)` queries started matching two elements
+instead of one. Fixed by switching those specific assertions to
+`getAllByText(...).length > 0` (or `[0]` for the ones that click a
+button), documented inline in each test file so it's clear this is
+expected duplication, not a newly-flaky test.
+
+tsc/oxlint/`npm test` (47/47, after the above fixes — no new test
+count, existing tests adjusted)/build all clean on web; pytest clean on
+backend (200/200). Verified live in the browser, methodically this
+time: the dashboard chart in both languages at desktop width (labels
+truncate cleanly, zero overlap) and at 375px (the original bug,
+confirmed fixed); the reports list, users list, and audit log all as
+cards at 375px and as tables at desktop width, in both languages; the
+header/nav no longer break mid-word at 375px; the douar-name cache bug
+fixed and re-verified end to end (manager's reports list now resolves
+real names, not UUIDs) after restarting the backend and clearing the
+dev server's own stale Vite cache (a repeat of the step 3.7 lesson,
+same fix).

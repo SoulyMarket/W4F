@@ -53,9 +53,12 @@ describe('AuditLogPage', () => {
 
     renderPage()
 
-    await waitFor(() => expect(screen.getByText('Admin Demo')).toBeInTheDocument())
-    expect(screen.getByText('النظام')).toBeInTheDocument()
-    // Scoped to table cells: "تسجيل دخول" also appears as a <select> option.
+    // Rendered twice by design (a stacked card below `sm`, a table row
+    // from `sm` up — see TableContainer's own comment).
+    await waitFor(() => expect(screen.getAllByText('Admin Demo').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('النظام').length).toBeGreaterThan(0)
+    // Scoped to table cells: "تسجيل دخول" also appears as a <select> option
+    // and in the (sm:hidden) mobile card.
     expect(screen.getByRole('cell', { name: 'تسجيل دخول' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'فشل تسجيل الدخول' })).toBeInTheDocument()
   })

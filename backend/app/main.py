@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
@@ -38,6 +38,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def no_store_cache_headers(request: Request, call_next):
+    """Every route here is per-user/territory-scoped (section 6's "least
+    privilege" rule) and none of them send a `Vary` header covering
+    `Authorization` — found live: a browser that cached one user's GET
+    response by URL alone (the only thing an HTTP cache keys on by
+    default; it never varies by Authorization unless told to) served
+    that same cached body back to a *different* signed-in user who later
+    requested the identical URL with different credentials. Confirmed
+    with `curl -D -` against this API: no `Cache-Control` header at all,
+    meaning browsers apply their own heuristic caching. `no-store` on
+    every response is the correct fix here, not a per-endpoint one —
+    nothing this API returns is ever safe to cache across sessions."""
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")

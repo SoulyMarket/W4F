@@ -12,7 +12,13 @@ export function NavBar() {
   if (!user || user.role === 'moqaddem') return null
 
   return (
-    <nav className="flex items-center gap-1 border-b border-border bg-white/40 px-4 py-2 dark:bg-white/5">
+    // flex-wrap so tabs wrap as whole units onto a new line at narrow
+    // widths, instead of each tab's own text breaking mid-word (found
+    // live: "Journal d'audit" split as "Journal d" / "audit") — each
+    // NavItem is `whitespace-nowrap` so a tab's label is always one of
+    // the two outcomes: full width on its line, or wrapped as a whole to
+    // the next line, never broken partway through.
+    <nav className="flex flex-wrap items-center gap-1 border-b border-border bg-white/40 px-4 py-2 dark:bg-white/5">
       {user.role === 'manager' && (
         <NavItem to="/" end label={t('dashboard.title')} />
       )}
@@ -35,7 +41,7 @@ function NavItem({ to, label, end }: { to: string; label: string; end?: boolean 
     <NavLink
       to={to}
       end={end}
-      className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+      className="relative whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
     >
       {({ isActive }) => (
         <>

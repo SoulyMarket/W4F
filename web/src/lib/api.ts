@@ -94,6 +94,17 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
+    // Every route here is per-user/territory-scoped and none of them set
+    // a `Vary: Authorization` header, so a browser's own HTTP cache (keyed
+    // on URL alone) can serve one signed-in user's cached GET response
+    // back to a completely different user who later requests the same
+    // URL — confirmed live (a manager's own /douars request came back
+    // with another user's earlier empty result). The backend now also
+    // sends `Cache-Control: no-store` on every response, but that can't
+    // retroactively invalidate whatever a browser already cached before
+    // this fix shipped — forcing it here too means this is safe
+    // regardless of what's already sitting in any given browser's cache.
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       'Accept-Language': currentLanguage,
