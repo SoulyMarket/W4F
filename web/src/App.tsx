@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthContext'
 import { LoginPage } from './features/auth/LoginPage'
+import { ProjectBoardPage } from './features/projects/ProjectBoardPage'
+import { ProjectDetailPage } from './features/projects/ProjectDetailPage'
 import { ReportDetailPage } from './features/reports/ReportDetailPage'
 import { ReportsListPage } from './features/reports/ReportsListPage'
 import { AppLayout } from './layout/AppLayout'
@@ -26,6 +28,8 @@ export default function App() {
                 <Route element={<RequireNonMoqaddem />}>
                   <Route path="/reports" element={<ReportsListPage />} />
                   <Route path="/reports/:reportId" element={<ReportDetailPage />} />
+                  <Route path="/projects" element={<ProjectBoardPage />} />
+                  <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                 </Route>
               </Route>
             </Route>

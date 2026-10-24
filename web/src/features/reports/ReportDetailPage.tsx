@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
 import { useDouarsLookup } from '../douars/douarsApi'
+import { CreateProjectForm } from '../projects/CreateProjectForm'
+import { useProjectForReport } from '../projects/projectsApi'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
@@ -25,6 +27,7 @@ export function ReportDetailPage() {
   const { reportId } = useParams<{ reportId: string }>()
   const { data: report, isPending, isError, error, refetch } = useReportDetail(reportId ?? '')
   const douars = useDouarsLookup()
+  const linkedProject = useProjectForReport(reportId ?? '', report?.status === 'converted_to_project')
 
   if (isPending) return <p className="text-foreground">{t('common.loading')}</p>
 
@@ -145,6 +148,21 @@ export function ReportDetailPage() {
         <Section title={t('reports.validation_form_title')}>
           <ValidationForm reportId={report.id} />
         </Section>
+      )}
+
+      {user?.role === 'manager' && report.status === 'validated' && (
+        <Section title={t('projects.create_form_title')}>
+          <CreateProjectForm reportId={report.id} />
+        </Section>
+      )}
+
+      {report.status === 'converted_to_project' && linkedProject.data && (
+        <Link
+          to={`/projects/${linkedProject.data.id}`}
+          className="self-start text-sm text-primary hover:underline"
+        >
+          {t('projects.view_project')}
+        </Link>
       )}
 
       <Section title={t('reports.section_validations')}>

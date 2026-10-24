@@ -1383,6 +1383,63 @@ immediately in «سجل التحقق» with today's date — all from one real
 by the automatic refetch. This closes the loop this phase's reports
 screens had left open: list → detail → act → see the result, for real.
 
+### Step 3.5 — Project board, project detail, and converting a report to a project
+
+Closes the remaining gap in Phase 3's own chain (report → validated →
+project → tracked): `POST /reports/{id}/project` (manager, only on a
+`validated` report — the backend 409s otherwise), a Kanban-style
+`ProjectBoardPage` (one column per `ProjectStatus` in pipeline order),
+`ProjectDetailPage` with its update history, and `POST /projects/{id}/
+updates` (manager, status transitions limited to a client-side mirror of
+the backend's own `PROJECT_STATUS_TRANSITIONS` state machine so the form
+never offers a move the server would 409 on — same reasoning already
+applied to the expert validation form's terminal-status check).
+
+**Kanban column order and RTL**: a plain flex row, no special-casing —
+it inherits `dir` from `html[dir]` (set by the i18n module) the same way
+the header layout already did, so columns read right-to-left for Arabic
+automatically. Verified visually: «جديد» (New) sits on the right, later
+pipeline stages flow left, matching reading order.
+
+**Linked-project backlink**: a `converted_to_project` report has no
+project id on the report itself — resolved via `GET /projects?report_id=`
+(`report_id` is unique on `projects`, so at most one result; the same
+lookup Android's own dossier detail screen already uses), only fetched
+when the report is actually in that status (`enabled` gated on
+`report.status`, not fetched speculatively on every report view).
+
+**Solution-type wording**: unlike every other enum in this app, Android
+has no equivalent screen (moqaddem never creates projects), so
+`solution_type.*` is freshly translated here rather than copied —
+documented since it breaks the "copy Android's wording" pattern every
+other label in this phase has followed, not an oversight.
+
+New nav: «المشاريع» for admin/manager (not expert — section 1 gives
+expert no project-management remit, only validation).
+
+9 new Vitest tests (board column placement + empty states + retry;
+project detail field/update rendering, manager-only status-form
+visibility limited to the allowed transitions, terminal-status message,
+full submit→refetch flow) — 48 total, all passing. tsc/oxlint/build
+clean.
+
+**Verified end-to-end in the browser as the seeded manager account**
+(Arabic), the full chain in one pass: opened the one `validated` report,
+filled and submitted "تحويل إلى مشروع" (title + pipe-repair solution
+type) — landed automatically on the new project's own detail page,
+status «جديد», 0% progress, the status-change form already limited to
+exactly `{in_study, cancelled}`. Submitted an `in_study` transition —
+status badge flipped live, success message appeared, the form's own
+allowed-transitions list updated to the new status's
+`{approved, cancelled}`, and the change appeared in the update history
+with today's date. The board then showed the same project correctly
+filed under its «قيد الدراسة» column. Back on the original report, the
+status now reads «تحول إلى مشروع» with a working «عرض المشروع» link back
+to the project. Every request in the chain (`POST .../project`,
+`POST .../updates`, the board's `GET /projects`, the backlink's
+`GET /projects?report_id=`) returned a clean 2xx against the live
+backend, no console errors.
+
 Not yet built: map (colored by priority, offline tiles out of scope for
-web — that's the Android screen), project board, admin users/territories/
-audit, scoring weights editor. Phase 4 (AI) — not started.
+web — that's the Android screen), admin users/territories/audit, scoring
+weights editor. Phase 4 (AI) — not started.

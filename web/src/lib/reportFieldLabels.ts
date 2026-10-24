@@ -19,3 +19,18 @@ export function frequencyLabel(t: TFunction, value: string): string {
 export function severityLabel(t: TFunction, value: string): string {
   return t(`field.severity.${value}`, { defaultValue: value })
 }
+
+export const SOLUTION_TYPES = [
+  'pipe_repair',
+  'pump_repair',
+  'network_extension',
+  'reservoir',
+  'source_improvement',
+  'equipment',
+  'temporary_solution',
+  'technical_study',
+] as const
+
+export function solutionTypeLabel(t: TFunction, value: string): string {
+  return t(`solution_type.${value}`, { defaultValue: value })
+}

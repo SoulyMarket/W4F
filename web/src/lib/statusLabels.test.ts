@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import i18n from '../i18n'
 import {
+  PROJECT_STATUS_TRANSITIONS,
   PROJECT_STATUSES,
   projectStatusLabel,
   REPORT_STATUSES,
@@ -46,5 +47,14 @@ describe('statusLabels', () => {
   it('falls back to the raw value for an unrecognized status rather than guessing', () => {
     void i18n.changeLanguage('ar')
     expect(reportStatusLabel(i18n.t.bind(i18n), 'some_future_status')).toBe('some_future_status')
+  })
+
+  it('mirrors the backend state machine: completed/cancelled are terminal, every other status can reach cancelled', () => {
+    expect(PROJECT_STATUS_TRANSITIONS.completed).toEqual([])
+    expect(PROJECT_STATUS_TRANSITIONS.cancelled).toEqual([])
+    for (const status of PROJECT_STATUSES) {
+      if (status === 'completed' || status === 'cancelled') continue
+      expect(PROJECT_STATUS_TRANSITIONS[status]).toContain('cancelled')
+    }
   })
 })

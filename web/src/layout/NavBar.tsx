@@ -25,6 +25,11 @@ export function NavBar() {
       <NavLink to="/reports" className={linkClass}>
         {t('reports.title')}
       </NavLink>
+      {(user.role === 'manager' || user.role === 'admin') && (
+        <NavLink to="/projects" className={linkClass}>
+          {t('projects.title')}
+        </NavLink>
+      )}
     </nav>
   )
 }

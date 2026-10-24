@@ -4,6 +4,8 @@ import {
   frequencyLabel,
   problemTypeLabel,
   severityLabel,
+  solutionTypeLabel,
+  SOLUTION_TYPES,
   waterSourceLabel,
 } from './reportFieldLabels'
 
@@ -30,6 +32,7 @@ describe('reportFieldLabels', () => {
       for (const value of PROBLEM_TYPES) expect(problemTypeLabel(t, value)).not.toBe(value)
       for (const value of FREQUENCIES) expect(frequencyLabel(t, value)).not.toBe(value)
       for (const value of SEVERITIES) expect(severityLabel(t, value)).not.toBe(value)
+      for (const value of SOLUTION_TYPES) expect(solutionTypeLabel(t, value)).not.toBe(value)
     }
   })
 

@@ -33,6 +33,21 @@ export function projectStatusLabel(t: TFunction, status: string): string {
   return t(`status.project.${status}`, { defaultValue: status })
 }
 
+// Mirrors the backend's own PROJECT_STATUS_TRANSITIONS
+// (`backend/app/models/enums.py`) — any non-terminal status may also move
+// to `cancelled`; `completed`/`cancelled` are terminal. Kept here so the
+// status-change form only ever offers a transition the server will
+// actually accept, rather than letting a manager submit one that 409s.
+export const PROJECT_STATUS_TRANSITIONS: Record<ProjectStatus, readonly ProjectStatus[]> = {
+  new: ['in_study', 'cancelled'],
+  in_study: ['approved', 'cancelled'],
+  approved: ['in_preparation', 'cancelled'],
+  in_preparation: ['in_progress', 'cancelled'],
+  in_progress: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: [],
+}
+
 export const VALIDATION_DECISIONS = ['validated', 'recheck_requested', 'modified', 'rejected'] as const
 export type ValidationDecision = (typeof VALIDATION_DECISIONS)[number]
 
