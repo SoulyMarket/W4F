@@ -1,6 +1,9 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../../components/Button'
+import { selectClass } from '../../components/formStyles'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useDouarsLookup } from '../douars/douarsApi'
 import type { SupportedLanguage } from '../../i18n'
@@ -16,6 +19,7 @@ export function ReportsListPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as SupportedLanguage
   const navigate = useNavigate()
+  const prefersReducedMotion = useReducedMotion()
 
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState('')
@@ -36,16 +40,12 @@ export function ReportsListPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">{t('reports.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('reports.title')}</h1>
 
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm text-foreground">
           {t('reports.filter_status')}
-          <select
-            value={status}
-            onChange={(event) => updateStatus(event.target.value)}
-            className="h-9 cursor-pointer rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <select value={status} onChange={(event) => updateStatus(event.target.value)} className={selectClass}>
             <option value="">{t('reports.filter_all_statuses')}</option>
             {REPORT_STATUSES.map((value) => (
               <option key={value} value={value}>
@@ -76,13 +76,9 @@ export function ReportsListPage() {
           <p className="text-destructive">
             {error instanceof ApiError ? error.message : t('reports.loading_error')}
           </p>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Button variant="secondary" onClick={() => void refetch()}>
             {t('common.retry')}
-          </button>
+          </Button>
         </div>
       ) : data.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('reports.empty')}</p>
@@ -102,12 +98,15 @@ export function ReportsListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {data.items.map((report) => {
+              {data.items.map((report, index) => {
                 const douar = douars.data?.get(report.douar_id)
                 const douarName = douar ? (lang === 'ar' ? douar.name_ar : douar.name_fr) : report.douar_id
                 return (
-                  <tr
+                  <motion.tr
                     key={report.id}
+                    initial={prefersReducedMotion ? undefined : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: prefersReducedMotion ? 0 : Math.min(index, 10) * 0.03 }}
                     onClick={() => navigate(`/reports/${report.id}`)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
@@ -127,7 +126,7 @@ export function ReportsListPage() {
                     </td>
                     <td className="px-4 py-2.5 text-foreground">{report.score ?? '—'}</td>
                     <td className="px-4 py-2.5 text-foreground">{formatDate(report.collected_at)}</td>
-                  </tr>
+                  </motion.tr>
                 )
               })}
             </tbody>
@@ -145,22 +144,22 @@ export function ReportsListPage() {
             })}
           </span>
           <div className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-9 cursor-pointer rounded-md border border-border px-3 font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('reports.previous_page')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={page * data.page_size >= data.total}
               onClick={() => setPage((p) => p + 1)}
-              className="h-9 cursor-pointer rounded-md border border-border px-3 font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('reports.next_page')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

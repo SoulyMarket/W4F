@@ -1,5 +1,7 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../../components/Button'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { PROJECT_STATUSES, projectStatusLabel } from '../../lib/statusLabels'
@@ -14,6 +16,7 @@ export function ProjectBoardPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as SupportedLanguage
   const navigate = useNavigate()
+  const prefersReducedMotion = useReducedMotion()
   const { data, isPending, isError, error, refetch } = useProjectsList()
   const douars = useDouarsLookup()
 
@@ -25,13 +28,9 @@ export function ProjectBoardPage() {
         <p className="text-destructive">
           {error instanceof ApiError ? error.message : t('projects.loading_error')}
         </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <Button variant="secondary" onClick={() => void refetch()}>
           {t('common.retry')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -45,13 +44,19 @@ export function ProjectBoardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">{t('projects.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('projects.title')}</h1>
 
       <div className="flex gap-4 overflow-x-auto pb-2">
-        {PROJECT_STATUSES.map((status) => {
+        {PROJECT_STATUSES.map((status, columnIndex) => {
           const projects = byStatus.get(status) ?? []
           return (
-            <div key={status} className="flex w-64 shrink-0 flex-col gap-2 rounded-xl border border-border bg-white/40 p-3 dark:bg-white/5">
+            <motion.div
+              key={status}
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: prefersReducedMotion ? 0 : columnIndex * 0.05 }}
+              className="flex w-64 shrink-0 flex-col gap-2 rounded-xl border border-border bg-white/40 p-3 dark:bg-white/5"
+            >
               <h2 className="text-sm font-semibold text-foreground">
                 {projectStatusLabel(t, status)} <span className="text-muted-foreground">({projects.length})</span>
               </h2>
@@ -62,25 +67,29 @@ export function ProjectBoardPage() {
                   const douar = douars.data?.get(project.douar_id)
                   const douarName = douar ? (lang === 'ar' ? douar.name_ar : douar.name_fr) : project.douar_id
                   return (
-                    <button
+                    <motion.button
                       key={project.id}
                       type="button"
                       onClick={() => navigate(`/projects/${project.id}`)}
-                      className="cursor-pointer rounded-lg border border-border bg-white/70 p-3 text-start shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring dark:bg-white/10"
+                      whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.01 }}
+                      whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+                      className="cursor-pointer rounded-lg border border-border bg-white/70 p-3 text-start shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring dark:bg-white/10"
                     >
                       <p className="text-sm font-medium text-foreground">{project.title}</p>
                       <p className="text-xs text-muted-foreground">{douarName}</p>
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                        <div
+                        <motion.div
                           className="h-full rounded-full bg-primary"
-                          style={{ width: `${project.progress_percent}%` }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${project.progress_percent}%` }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
                         />
                       </div>
-                    </button>
+                    </motion.button>
                   )
                 })
               )}
-            </div>
+            </motion.div>
           )
         })}
       </div>

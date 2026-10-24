@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+
 // Semantic (not cycled) colors — a single badge has no neighboring bars
 // to tell apart, so here the color itself should hint at meaning: red for
 // a dead end, green for a positive outcome, blue for "making progress".
@@ -23,11 +25,18 @@ const PROJECT_STATUS_COLOR: Record<string, string> = {
 export function StatusBadge({ status, label, kind }: { status: string; label: string; kind: 'report' | 'project' }) {
   const color = (kind === 'report' ? REPORT_STATUS_COLOR : PROJECT_STATUS_COLOR)[status] ?? '#64748b'
   return (
-    <span
+    <motion.span
+      // A fresh badge (or one whose status just changed) pops in instead
+      // of appearing instantly — keyed on status+color so re-renders with
+      // the same value don't replay the animation.
+      key={status}
+      initial={{ scale: 0.85, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
       style={{ backgroundColor: color }}
     >
       {label}
-    </span>
+    </motion.span>
   )
 }

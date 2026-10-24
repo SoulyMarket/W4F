@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '../../components/Button'
+import { inputClass, labelClass, selectClass, textareaClass } from '../../components/formStyles'
 import { ApiError } from '../../lib/api'
 import { solutionTypeLabel, SOLUTION_TYPES } from '../../lib/reportFieldLabels'
 import { useCreateProjectFromReport } from './projectsApi'
@@ -42,22 +44,17 @@ export function CreateProjectForm({ reportId }: { reportId: string }) {
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.create_title_label')}</span>
-        <input
-          required
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <span className={labelClass}>{t('projects.create_title_label')}</span>
+        <input required value={title} onChange={(event) => setTitle(event.target.value)} className={inputClass} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.solution_type_label')}</span>
+        <span className={labelClass}>{t('projects.solution_type_label')}</span>
         <select
           required
           value={solutionType}
           onChange={(event) => setSolutionType(event.target.value)}
-          className="h-10 cursor-pointer rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={selectClass}
         >
           <option value="" disabled>
             {t('projects.solution_type_label')}
@@ -71,43 +68,39 @@ export function CreateProjectForm({ reportId }: { reportId: string }) {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.create_description_label')}</span>
+        <span className={labelClass}>{t('projects.create_description_label')}</span>
         <textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={2}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={textareaClass}
         />
       </label>
 
       <div className="flex gap-3">
         <label className="flex flex-1 flex-col gap-1 text-sm">
-          <span className="font-medium text-foreground">{t('projects.create_planned_start_label')}</span>
+          <span className={labelClass}>{t('projects.create_planned_start_label')}</span>
           <input
             type="date"
             value={plannedStart}
             onChange={(event) => setPlannedStart(event.target.value)}
-            className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className={inputClass}
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
-          <span className="font-medium text-foreground">{t('projects.create_planned_end_label')}</span>
+          <span className={labelClass}>{t('projects.create_planned_end_label')}</span>
           <input
             type="date"
             value={plannedEnd}
             onChange={(event) => setPlannedEnd(event.target.value)}
-            className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className={inputClass}
           />
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={!title || !solutionType || mutation.isPending}
-        className="h-10 cursor-pointer self-start rounded-md bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <Button type="submit" disabled={!title || !solutionType} isLoading={mutation.isPending} className="self-start">
         {mutation.isPending ? t('projects.create_submitting') : t('projects.create_submit')}
-      </button>
+      </Button>
     </form>
   )
 }

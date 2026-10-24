@@ -1,5 +1,8 @@
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/Button'
+import { inputClass, selectClass } from '../../components/formStyles'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { AUDIT_ACTIONS, auditActionLabel } from '../../lib/statusLabels'
@@ -23,7 +26,7 @@ export function AuditLogPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">{t('admin.audit_title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('admin.audit_title')}</h1>
 
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm text-foreground">
@@ -35,7 +38,7 @@ export function AuditLogPage() {
               setPage(1)
             }}
             placeholder="report, project, user…"
-            className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className={`${inputClass} h-9 w-auto`}
           />
         </label>
 
@@ -47,7 +50,7 @@ export function AuditLogPage() {
               setAction(event.target.value)
               setPage(1)
             }}
-            className="h-9 cursor-pointer rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className={`${selectClass} h-9 w-auto`}
           >
             <option value="">{t('admin.audit_filter_all')}</option>
             {AUDIT_ACTIONS.map((value) => (
@@ -66,13 +69,9 @@ export function AuditLogPage() {
           <p className="text-destructive">
             {error instanceof ApiError ? error.message : t('admin.audit_loading_error')}
           </p>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Button variant="secondary" onClick={() => void refetch()}>
             {t('common.retry')}
-          </button>
+          </Button>
         </div>
       ) : data.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('admin.audit_empty')}</p>
@@ -91,10 +90,15 @@ export function AuditLogPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {data.items.map((entry) => {
+              {data.items.map((entry, index) => {
                 const actor = entry.actor_id ? users.data?.get(entry.actor_id) : null
                 return (
-                  <tr key={entry.id}>
+                  <motion.tr
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: Math.min(index, 10) * 0.03 }}
+                  >
                     <td className="px-4 py-2.5 text-foreground">{formatDate(entry.created_at)}</td>
                     <td className="px-4 py-2.5 text-foreground">
                       {actor ? actor.full_name : entry.actor_id ? entry.actor_id : t('admin.audit_system_actor')}
@@ -104,7 +108,7 @@ export function AuditLogPage() {
                       {entry.entity_type}
                       {entry.entity_id ? ` · ${entry.entity_id.slice(0, 8)}` : ''}
                     </td>
-                  </tr>
+                  </motion.tr>
                 )
               })}
             </tbody>
@@ -122,22 +126,22 @@ export function AuditLogPage() {
             })}
           </span>
           <div className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-9 cursor-pointer rounded-md border border-border px-3 font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('reports.previous_page')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={page * data.page_size >= data.total}
               onClick={() => setPage((p) => p + 1)}
-              className="h-9 cursor-pointer rounded-md border border-border px-3 font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t('reports.next_page')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

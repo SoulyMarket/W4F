@@ -1,5 +1,8 @@
+import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
 import { useDouarsLookup } from '../douars/douarsApi'
@@ -27,13 +30,9 @@ export function ProjectDetailPage() {
         <p className="text-destructive">
           {error instanceof ApiError ? error.message : t('projects.detail_loading_error')}
         </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <Button variant="secondary" onClick={() => void refetch()}>
           {t('common.retry')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -49,14 +48,19 @@ export function ProjectDetailPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">{project.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{project.title}</h1>
           <p className="text-sm text-muted-foreground">{douarName}</p>
         </div>
         <StatusBadge status={project.status} label={projectStatusLabel(t, project.status)} kind="project" />
       </div>
 
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${project.progress_percent}%` }} />
+        <motion.div
+          className="h-full rounded-full bg-primary"
+          initial={{ width: 0 }}
+          animate={{ width: `${project.progress_percent}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
       </div>
       <p className="-mt-4 text-xs text-muted-foreground">
         {t('projects.progress_label', { percent: project.progress_percent })}
@@ -121,10 +125,10 @@ export function ProjectDetailPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <Card>
       <h2 className="mb-3 text-sm font-semibold text-foreground">{title}</h2>
       {children}
-    </div>
+    </Card>
   )
 }
 

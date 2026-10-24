@@ -1,5 +1,8 @@
+import { motion } from 'framer-motion'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/Button'
+import { inputClass, labelClass, selectClass } from '../../components/formStyles'
 import { ApiError } from '../../lib/api'
 import { useCreateUser } from './usersApi'
 
@@ -23,7 +26,14 @@ export function CreateUserForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <motion.form
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5"
+    >
       <h2 className="text-sm font-semibold text-foreground">{t('admin.create_form_title')}</h2>
 
       {mutation.isError && (
@@ -33,46 +43,36 @@ export function CreateUserForm({ onDone }: { onDone: () => void }) {
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('admin.full_name_label')}</span>
-        <input
-          required
-          value={fullName}
-          onChange={(event) => setFullName(event.target.value)}
-          className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <span className={labelClass}>{t('admin.full_name_label')}</span>
+        <input required value={fullName} onChange={(event) => setFullName(event.target.value)} className={inputClass} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('admin.email_label')}</span>
+        <span className={labelClass}>{t('admin.email_label')}</span>
         <input
           type="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={inputClass}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('admin.password_label')}</span>
+        <span className={labelClass}>{t('admin.password_label')}</span>
         <input
           type="password"
           required
           minLength={10}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="h-10 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={inputClass}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('admin.role_label')}</span>
-        <select
-          required
-          value={role}
-          onChange={(event) => setRole(event.target.value)}
-          className="h-10 cursor-pointer rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <span className={labelClass}>{t('admin.role_label')}</span>
+        <select required value={role} onChange={(event) => setRole(event.target.value)} className={selectClass}>
           <option value="" disabled>
             {t('admin.role_placeholder')}
           </option>
@@ -85,21 +85,13 @@ export function CreateUserForm({ onDone }: { onDone: () => void }) {
       </label>
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={!fullName || !email || !password || !role || mutation.isPending}
-          className="h-10 cursor-pointer rounded-md bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={!fullName || !email || !password || !role} isLoading={mutation.isPending}>
           {mutation.isPending ? t('admin.create_submitting') : t('admin.create_submit')}
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="h-10 cursor-pointer rounded-md border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
           {t('admin.close')}
-        </button>
+        </Button>
       </div>
-    </form>
+    </motion.form>
   )
 }

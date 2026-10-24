@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Card } from '../components/Card'
 import { useAuth } from '../features/auth/AuthContext'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 
@@ -16,13 +17,17 @@ export function RoleHome() {
   if (user.role === 'manager') return <DashboardPage />
 
   if (user.role === 'moqaddem') {
-    return <p className="text-foreground">{t('home.moqaddem_notice')}</p>
+    return (
+      <Card className="max-w-md">
+        <p className="text-foreground">{t('home.moqaddem_notice')}</p>
+      </Card>
+    )
   }
 
   return (
-    <div className="text-foreground">
-      <p className="text-lg font-medium">{t('home.welcome', { name: user.fullName })}</p>
+    <Card className="max-w-md">
+      <p className="text-lg font-semibold text-foreground">{t('home.welcome', { name: user.fullName })}</p>
       <p className="text-sm text-muted-foreground">{t('home.role_label', { role: t(`role.${user.role}`) })}</p>
-    </div>
+    </Card>
   )
 }

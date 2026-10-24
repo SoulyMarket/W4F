@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
 import { StatusBarChart, type StatusBarChartEntry } from '../../components/charts/StatusBarChart'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
@@ -27,13 +29,9 @@ export function DashboardPage() {
     return (
       <div className="flex flex-col items-start gap-2">
         <p className="text-destructive">{error instanceof ApiError ? error.message : t('dashboard.loading_error')}</p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <Button variant="secondary" onClick={() => void refetch()}>
           {t('common.retry')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -57,25 +55,26 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-foreground">{t('dashboard.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('dashboard.title')}</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label={t('dashboard.total_douars')} value={data.total_douars} />
-        <KpiCard label={t('dashboard.priority_douars')} value={data.priority_douars.length} />
-        <KpiCard label={t('dashboard.recurring_problem_douars')} value={data.recurring_problem_douars.length} />
+        <KpiCard index={0} label={t('dashboard.total_douars')} value={data.total_douars} />
+        <KpiCard index={1} label={t('dashboard.priority_douars')} value={data.priority_douars.length} />
+        <KpiCard index={2} label={t('dashboard.recurring_problem_douars')} value={data.recurring_problem_douars.length} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard title={t('dashboard.reports_by_status')}>
+        <ChartCard index={3} title={t('dashboard.reports_by_status')}>
           <StatusBarChart data={reportEntries} />
         </ChartCard>
-        <ChartCard title={t('dashboard.projects_by_status')}>
+        <ChartCard index={4} title={t('dashboard.projects_by_status')}>
           <StatusBarChart data={projectEntries} />
         </ChartCard>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DouarListCard
+          index={5}
           title={t('dashboard.priority_douars')}
           hint={t('dashboard.priority_douars_hint')}
           emptyMessage={t('dashboard.priority_douars_empty')}
@@ -85,6 +84,7 @@ export function DashboardPage() {
           reportCountLabel={t('dashboard.report_count')}
         />
         <DouarListCard
+          index={6}
           title={t('dashboard.recurring_problem_douars')}
           hint={t('dashboard.recurring_problem_douars_hint')}
           emptyMessage={t('dashboard.recurring_problem_douars_empty')}
@@ -98,25 +98,26 @@ export function DashboardPage() {
   )
 }
 
-function KpiCard({ label, value }: { label: string; value: number }) {
+function KpiCard({ index, label, value }: { index: number; label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <Card index={index}>
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
-    </div>
+    </Card>
   )
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartCard({ index, title, children }: { index: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <Card index={index}>
       <h2 className="mb-3 text-sm font-semibold text-foreground">{title}</h2>
       {children}
-    </div>
+    </Card>
   )
 }
 
 function DouarListCard({
+  index,
   title,
   hint,
   emptyMessage,
@@ -125,6 +126,7 @@ function DouarListCard({
   scoreLabel,
   reportCountLabel,
 }: {
+  index: number
   title: string
   hint: string
   emptyMessage: string
@@ -134,7 +136,7 @@ function DouarListCard({
   reportCountLabel: string
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <Card index={index}>
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p className="mb-3 text-xs text-muted-foreground">{hint}</p>
       {douars.length === 0 ? (
@@ -151,6 +153,6 @@ function DouarListCard({
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   )
 }

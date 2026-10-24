@@ -1501,3 +1501,82 @@ editor. Phase 4 (AI) — not started.
 **Correction to the step 3.5 entry above**: it claimed "48 total" tests;
 the actual count at that point was 39 — miscounted when writing that
 entry, caught while reconciling the running total for this step.
+
+### Step 3.7 — Design consistency pass (Button/Card/motion), requested directly
+
+Not a build-order step — a direct request after looking at the running
+app: "very basic and incomplete, buttons are inconsistent, use framer
+motion and the ui/ux pro max skill for fonts and color palette." Every
+screen in steps 3.1-3.6 had hand-styled its own `<button>`/`<input>`/
+`<select>` with small drift between them (one retry button had
+`hover:bg-muted`, another didn't; some inputs were `h-10`, the login
+ones `h-11`). Addressed directly rather than patching individual
+screens:
+
+- **`components/Button.tsx`** — one button for the whole app, 5 variants
+  (primary/secondary/ghost/destructive/destructive-ghost) × 2 sizes,
+  built on `framer-motion`'s `motion.button` so press/hover feedback
+  (`whileHover`/`whileTap`, matching the `active:scale-95`-style
+  guidance pulled from `ui-ux-pro-max --domain ux`) responds to
+  `prefers-reduced-motion` via `useReducedMotion()` — a plain CSS
+  `:active` rule can't condition on that the same way. Every `<button>`
+  across the app that functions as an actual action (not an inline table
+  text-link) now goes through this one component.
+- **`components/Card.tsx`** — replaces the `rounded-xl border
+  border-border bg-white/60 p-4 shadow-sm dark:bg-white/5` string that
+  had been copy-pasted into seven files, with an optional stagger-by-
+  index fade-in-up entrance and an `interactive` hover-lift variant.
+- **`components/formStyles.ts`** — one `inputClass`/`selectClass`/
+  `textareaClass`/`labelClass` set, replacing seven near-identical but
+  not-quite-matching class strings across the forms (validation,
+  project creation, project status update, user creation, filters).
+- **`components/PageTransition.tsx`** — a route-keyed cross-fade
+  (`AnimatePresence` + `useOutlet()`, not `<Outlet/>` directly, so the
+  outgoing page can keep rendering through its own exit animation),
+  skipped entirely under `prefers-reduced-motion`.
+- **`layout/NavBar.tsx`** — rebuilt its active-tab indicator as a single
+  `layoutId`-shared pill (`framer-motion`'s shared-layout animation): the
+  highlight now slides from the old active tab to the new one instead of
+  popping between them, the same pattern most native tab bars use.
+- List/row entrances (reports table, project board columns/cards, users
+  table, audit log table) and status badges (`StatusBadge`) now fade/
+  pop in with a small index-based stagger, and progress bars (project
+  board cards, project detail) animate their width on mount instead of
+  snapping to it.
+- Page titles bumped from `text-xl font-semibold` to `text-2xl
+  font-bold tracking-tight` across every screen for a clearer hierarchy
+  — one of the concrete things that read as "basic."
+- Re-confirmed against `design-system/w4f-dashboard/MASTER.md` (the
+  `ui-ux-pro-max` output from step 3.1): the color tokens and the
+  Noto Sans Arabic/Fira Sans typography split were already wired through
+  `index.css`'s `@theme` block and already applied everywhere via the
+  `text-foreground`/`bg-primary`/etc. utility classes — the "basic"
+  feeling was from inconsistent buttons/spacing/motion, not from the
+  palette or fonts not being applied, so no token changes were needed
+  here.
+
+**Real bug found and fixed during verification**: right after installing
+`framer-motion` with the dev server still running, every `Button` render
+threw `Invalid hook call` / `Cannot read properties of null (reading
+'useState')` inside `useReducedMotion()` — a classic Vite stale
+dependency-pre-bundle issue (`node_modules/.vite/deps` had cached a
+dependency graph from before `framer-motion` existed, and the duplicate/
+stale React copy it resolved against broke React's hook dispatcher).
+Fixed by clearing `node_modules/.vite` and restarting the dev server;
+confirmed clean afterward in a fresh browser tab (the errors seen in the
+old tab turned out to be the console's own stale buffer from before the
+restart, not a live issue — the same "stale console" pattern already
+seen a few times earlier in this project).
+
+tsc/oxlint/`npm test` (47/47)/build all clean. Verified in the browser
+across both languages and as three different roles (manager, admin, and
+via the route guards, confirmed a non-admin still gets bounced off
+`/admin/*`): dashboard, reports list/detail, project board, users, and
+audit log all render with the new button/card styling, the sliding nav
+pill, and list stagger-in, no console errors in a fresh tab. Also
+checked the 375px mobile preset on the reports screen — header and nav
+wrap without horizontal overflow, no layout breakage.
+
+Bundle grew to ~901 KB (gzip ~271 KB) with `framer-motion` added — the
+code-splitting item already noted as deferred in step 3.2 is now more
+worth doing, still not blocking for this prototype.

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
@@ -10,36 +11,55 @@ export function NavBar() {
   const { user } = useAuth()
   if (!user || user.role === 'moqaddem') return null
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-      isActive ? 'bg-primary text-on-primary' : 'text-foreground hover:bg-muted'
-    }`
-
   return (
-    <nav className="flex items-center gap-2 border-b border-border bg-white/40 px-4 py-2 dark:bg-white/5">
+    <nav className="flex items-center gap-1 border-b border-border bg-white/40 px-4 py-2 dark:bg-white/5">
       {user.role === 'manager' && (
-        <NavLink to="/" end className={linkClass}>
-          {t('dashboard.title')}
-        </NavLink>
+        <NavItem to="/" end label={t('dashboard.title')} />
       )}
-      <NavLink to="/reports" className={linkClass}>
-        {t('reports.title')}
-      </NavLink>
+      <NavItem to="/reports" label={t('reports.title')} />
       {(user.role === 'manager' || user.role === 'admin') && (
-        <NavLink to="/projects" className={linkClass}>
-          {t('projects.title')}
-        </NavLink>
+        <NavItem to="/projects" label={t('projects.title')} />
       )}
       {user.role === 'admin' && (
         <>
-          <NavLink to="/admin/users" className={linkClass}>
-            {t('admin.users_title')}
-          </NavLink>
-          <NavLink to="/admin/audit" className={linkClass}>
-            {t('admin.audit_title')}
-          </NavLink>
+          <NavItem to="/admin/users" label={t('admin.users_title')} />
+          <NavItem to="/admin/audit" label={t('admin.audit_title')} />
         </>
       )}
     </nav>
+  )
+}
+
+function NavItem({ to, label, end }: { to: string; label: string; end?: boolean }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className="relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+    >
+      {({ isActive }) => (
+        <>
+          {/* A single shared layoutId across every NavItem instance: when
+              the active one changes, framer-motion animates this pill
+              sliding from its old position to its new one instead of
+              popping, the same "sliding tab indicator" pattern as most
+              native tab bars. */}
+          {isActive && (
+            <motion.span
+              layoutId="nav-active-pill"
+              className="absolute inset-0 rounded-md bg-primary"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <span
+            className={`relative z-10 transition-colors ${
+              isActive ? 'text-on-primary' : 'text-foreground hover:text-primary'
+            }`}
+          >
+            {label}
+          </span>
+        </>
+      )}
+    </NavLink>
   )
 }

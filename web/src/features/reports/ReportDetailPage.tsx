@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
 import { useDouarsLookup } from '../douars/douarsApi'
@@ -37,13 +39,9 @@ export function ReportDetailPage() {
         <p className="text-destructive">
           {error instanceof ApiError ? error.message : t('reports.detail_loading_error')}
         </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <Button variant="secondary" onClick={() => void refetch()}>
           {t('common.retry')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -59,7 +57,7 @@ export function ReportDetailPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">{t('reports.detail_title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('reports.detail_title')}</h1>
           <p className="text-sm text-muted-foreground">{douarName}</p>
         </div>
         <StatusBadge status={report.status} label={reportStatusLabel(t, report.status)} kind="report" />
@@ -208,10 +206,10 @@ export function ReportDetailPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-white/60 p-4 shadow-sm dark:bg-white/5">
+    <Card>
       <h2 className="mb-3 text-sm font-semibold text-foreground">{title}</h2>
       {children}
-    </div>
+    </Card>
   )
 }
 

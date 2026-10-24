@@ -1,5 +1,8 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/Button'
+import { inputClass, labelClass, selectClass, textareaClass } from '../../components/formStyles'
 import { ApiError } from '../../lib/api'
 import { PROJECT_STATUS_TRANSITIONS, projectStatusLabel, type ProjectStatus } from '../../lib/statusLabels'
 import { useAddProjectUpdate } from './projectsApi'
@@ -45,9 +48,18 @@ export function ProjectStatusUpdateForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      {mutation.isSuccess && (
-        <p className="text-sm text-green-700 dark:text-green-400">{t('projects.update_success')}</p>
-      )}
+      <AnimatePresence mode="wait">
+        {mutation.isSuccess && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-sm text-green-700 dark:text-green-400"
+          >
+            {t('projects.update_success')}
+          </motion.p>
+        )}
+      </AnimatePresence>
       {mutation.isError && (
         <p className="text-sm text-destructive">
           {mutation.error instanceof ApiError ? mutation.error.message : t('projects.update_error')}
@@ -55,13 +67,8 @@ export function ProjectStatusUpdateForm({
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.update_new_status_label')}</span>
-        <select
-          required
-          value={newStatus}
-          onChange={(event) => setNewStatus(event.target.value)}
-          className="h-10 cursor-pointer rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <span className={labelClass}>{t('projects.update_new_status_label')}</span>
+        <select required value={newStatus} onChange={(event) => setNewStatus(event.target.value)} className={selectClass}>
           <option value="" disabled>
             {t('projects.update_new_status_placeholder')}
           </option>
@@ -74,34 +81,25 @@ export function ProjectStatusUpdateForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.update_progress_label')}</span>
+        <span className={labelClass}>{t('projects.update_progress_label')}</span>
         <input
           type="number"
           min={0}
           max={100}
           value={progress}
           onChange={(event) => setProgress(event.target.value)}
-          className="h-10 w-24 rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={`${inputClass} w-24`}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('projects.update_note_label')}</span>
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          rows={2}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <span className={labelClass}>{t('projects.update_note_label')}</span>
+        <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} className={textareaClass} />
       </label>
 
-      <button
-        type="submit"
-        disabled={!newStatus || mutation.isPending}
-        className="h-10 cursor-pointer self-start rounded-md bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <Button type="submit" disabled={!newStatus} isLoading={mutation.isPending} className="self-start">
         {mutation.isPending ? t('projects.update_submitting') : t('projects.update_submit')}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -1,5 +1,8 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/Button'
+import { labelClass, selectClass, textareaClass } from '../../components/formStyles'
 import { ApiError } from '../../lib/api'
 import { severityLabel } from '../../lib/reportFieldLabels'
 import { VALIDATION_DECISIONS, validationDecisionLabel } from '../../lib/statusLabels'
@@ -42,7 +45,18 @@ export function ValidationForm({ reportId }: { reportId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      {mutation.isSuccess && <p className="text-sm text-green-700 dark:text-green-400">{t('reports.validation_success')}</p>}
+      <AnimatePresence mode="wait">
+        {mutation.isSuccess && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-sm text-green-700 dark:text-green-400"
+          >
+            {t('reports.validation_success')}
+          </motion.p>
+        )}
+      </AnimatePresence>
       {mutation.isError && (
         <p className="text-sm text-destructive">
           {mutation.error instanceof ApiError ? mutation.error.message : t('reports.validation_error')}
@@ -50,13 +64,8 @@ export function ValidationForm({ reportId }: { reportId: string }) {
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('reports.validation_decision_label')}</span>
-        <select
-          required
-          value={decision}
-          onChange={(event) => setDecision(event.target.value)}
-          className="h-10 cursor-pointer rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <span className={labelClass}>{t('reports.validation_decision_label')}</span>
+        <select required value={decision} onChange={(event) => setDecision(event.target.value)} className={selectClass}>
           <option value="" disabled>
             {t('reports.validation_decision_placeholder')}
           </option>
@@ -69,32 +78,23 @@ export function ValidationForm({ reportId }: { reportId: string }) {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('reports.validation_comment_label')}</span>
-        <textarea
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          rows={2}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <span className={labelClass}>{t('reports.validation_comment_label')}</span>
+        <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={2} className={textareaClass} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('reports.validation_proposed_solution_label')}</span>
+        <span className={labelClass}>{t('reports.validation_proposed_solution_label')}</span>
         <textarea
           value={proposedSolution}
           onChange={(event) => setProposedSolution(event.target.value)}
           rows={2}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className={textareaClass}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-foreground">{t('reports.validation_urgency_label')}</span>
-        <select
-          value={urgency}
-          onChange={(event) => setUrgency(event.target.value)}
-          className="h-10 cursor-pointer rounded-md border border-border bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <span className={labelClass}>{t('reports.validation_urgency_label')}</span>
+        <select value={urgency} onChange={(event) => setUrgency(event.target.value)} className={selectClass}>
           <option value="">{t('reports.validation_urgency_placeholder')}</option>
           {SEVERITIES.map((value) => (
             <option key={value} value={value}>
@@ -104,13 +104,9 @@ export function ValidationForm({ reportId }: { reportId: string }) {
         </select>
       </label>
 
-      <button
-        type="submit"
-        disabled={!decision || mutation.isPending}
-        className="h-10 cursor-pointer self-start rounded-md bg-primary px-4 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <Button type="submit" disabled={!decision} isLoading={mutation.isPending} className="self-start">
         {mutation.isPending ? t('reports.validation_submitting') : t('reports.validation_submit')}
-      </button>
+      </Button>
     </form>
   )
 }
