@@ -1,6 +1,7 @@
 from app.core.security import hash_password
-from app.models.enums import UserRole
+from app.models.enums import AuditAction, UserRole
 from app.models.user import User
+from app.services.audit import write_audit_log
 
 PASSWORD = "correct horse battery staple"
 
@@ -62,3 +63,32 @@ def test_audit_log_is_paginated(client, db_session):
     assert len(body["items"]) <= 1
     assert body["page"] == 1
     assert body["page_size"] == 1
+
+
+def test_audit_log_serializes_a_real_ip_address(client, db_session):
+    """Regression test: every other test in this file logs in through
+    `TestClient`, whose `request.client.host` is the literal string
+    "testclient" — `_client_ip()` in `routes/auth.py` filters that down
+    to `None` before it ever reaches the audit log, so no prior test run
+    ever exercised a real `ip` value here. Found live: the Postgres INET
+    column comes back from SQLAlchemy as `ipaddress.IPv4Address`, not
+    `str`, and `AuditLogOut.ip: str | None` rejected it outright —
+    `GET /audit` 500'd for real as soon as a login happened over an
+    actual HTTP connection with a real client IP."""
+    admin = make_user(db_session)
+    write_audit_log(
+        db_session,
+        actor_id=admin.id,
+        action=AuditAction.LOGIN,
+        entity_type="user",
+        entity_id=admin.id,
+        ip="127.0.0.1",
+    )
+    db_session.commit()
+    headers = auth_headers(client, "admin@example.com")
+
+    resp = client.get("/api/v1/audit", headers=headers)
+
+    assert resp.status_code == 200
+    ips = [item["ip"] for item in resp.json()["items"] if item["ip"] is not None]
+    assert "127.0.0.1" in ips

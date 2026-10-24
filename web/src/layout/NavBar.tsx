@@ -30,6 +30,16 @@ export function NavBar() {
           {t('projects.title')}
         </NavLink>
       )}
+      {user.role === 'admin' && (
+        <>
+          <NavLink to="/admin/users" className={linkClass}>
+            {t('admin.users_title')}
+          </NavLink>
+          <NavLink to="/admin/audit" className={linkClass}>
+            {t('admin.audit_title')}
+          </NavLink>
+        </>
+      )}
     </nav>
   )
 }

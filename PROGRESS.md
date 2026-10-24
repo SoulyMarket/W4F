@@ -1440,6 +1440,64 @@ to the project. Every request in the chain (`POST .../project`,
 `GET /projects?report_id=`) returned a clean 2xx against the live
 backend, no console errors.
 
+### Step 3.6 — Admin: users and audit log
+
+`GET/POST /users`, `POST /users/{id}/deactivate`, `POST /users/{id}/
+reset-password`, and `GET /audit` wired up as `UsersPage` and
+`AuditLogPage`, admin-only (new `RequireAdmin` route guard, same
+defense-in-depth pattern as `RequireNonMoqaddem`). Territory management
+(`/territories`) deliberately not built this pass — admin's users/audit
+surface was already substantial; documented as the remaining gap rather
+than silently skipped.
+
+**Two real bugs found live, both fixed**:
+1. `window.confirm()` for deactivate/reset-password silently did
+   nothing in one live check — a native dialog isn't part of the DOM, so
+   it's untestable and in this run it simply auto-dismissed instead of
+   prompting, no-opping the action with no error. Replaced with an
+   in-app two-step inline confirm (click arms it, a second click or
+   cancel resolves it), fully within the app's own design system and
+   directly testable.
+2. **Backend bug, not a web bug**: `GET /audit` 500'd for real the
+   moment a login happened over an actual HTTP connection with a real
+   client IP. `AuditLog.ip` is a Postgres `INET` column; SQLAlchemy/
+   psycopg hand it back as `ipaddress.IPv4Address`, not `str`, despite
+   the model's own `Mapped[str | None]` hint only describing intent, not
+   runtime type. `AuditLogOut.ip: str | None` rejected it outright. Never
+   caught by the backend's own test suite — `TestClient` reports its host
+   as the literal string `"testclient"`, which `_client_ip()` already
+   filters down to `None` before it reaches the audit log, so no test run
+   had ever exercised a real IP value here. Fixed with a
+   `@field_validator("ip", mode="before")` coercing to `str`; added a
+   regression test (`test_audit_log_serializes_a_real_ip_address`) that
+   writes a real `"127.0.0.1"` audit row directly and asserts `GET
+   /audit` returns it correctly — 198 backend tests now (was 197).
+
+Also fixed: the audit log reused `reports.page_info`'s pagination text
+("N بلاغ" — "N reports"), visibly wrong for a list of audit entries.
+Added a generic `common.page_info` ("N نتيجة" — "N results") instead.
+
+12 new Vitest tests (users list rendering incl. empty-state wording,
+inline confirm flow for both reset-password and deactivate including the
+cancel path, audit log actor-name resolution + system-actor fallback +
+empty state) — 59 total, all passing. tsc/oxlint/build clean on web;
+pytest clean on backend (198/198).
+
+**Verified end-to-end in the browser as the seeded admin account**
+(Arabic): listed all 4 seeded users correctly; reset the moqaddem
+account's password through the new inline-confirm flow and saw a real
+temporary password returned from the live backend; created a new expert
+user ("Test Reviewer") who appeared in the list immediately; opened the
+audit log and, after the backend fix, saw the complete real history of
+every action taken across this entire Phase 3 testing session — logins,
+the user creation and password reset just performed, every report
+validation, project creation and status change — 32 entries across 2
+pages, actor names resolved correctly, all 2xx, no console errors.
+
 Not yet built: map (colored by priority, offline tiles out of scope for
-web — that's the Android screen), admin users/territories/audit, scoring
-weights editor. Phase 4 (AI) — not started.
+web — that's the Android screen), territories admin, scoring weights
+editor. Phase 4 (AI) — not started.
+
+**Correction to the step 3.5 entry above**: it claimed "48 total" tests;
+the actual count at that point was 39 — miscounted when writing that
+entry, caught while reconciling the running total for this step.

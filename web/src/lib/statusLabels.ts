@@ -54,3 +54,18 @@ export type ValidationDecision = (typeof VALIDATION_DECISIONS)[number]
 export function validationDecisionLabel(t: TFunction, decision: string): string {
   return t(`status.validation_decision.${decision}`, { defaultValue: decision })
 }
+
+export const AUDIT_ACTIONS = [
+  'create',
+  'update',
+  'delete',
+  'login',
+  'login_failed',
+  'logout',
+  'status_change',
+  'export',
+] as const
+
+export function auditActionLabel(t: TFunction, action: string): string {
+  return t(`audit_action.${action}`, { defaultValue: action })
+}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import i18n from '../i18n'
 import {
+  AUDIT_ACTIONS,
+  auditActionLabel,
   PROJECT_STATUS_TRANSITIONS,
   PROJECT_STATUSES,
   projectStatusLabel,
@@ -47,6 +49,17 @@ describe('statusLabels', () => {
   it('falls back to the raw value for an unrecognized status rather than guessing', () => {
     void i18n.changeLanguage('ar')
     expect(reportStatusLabel(i18n.t.bind(i18n), 'some_future_status')).toBe('some_future_status')
+  })
+
+  it('resolves every known audit action to a non-raw label in both languages', () => {
+    for (const lang of ['ar', 'fr'] as const) {
+      void i18n.changeLanguage(lang)
+      for (const action of AUDIT_ACTIONS) {
+        const label = auditActionLabel(i18n.t.bind(i18n), action)
+        expect(label).not.toBe(action)
+        expect(label.length).toBeGreaterThan(0)
+      }
+    }
   })
 
   it('mirrors the backend state machine: completed/cancelled are terminal, every other status can reach cancelled', () => {
