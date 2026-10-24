@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
+import { useAuth } from '../auth/AuthContext'
 import { useDouarsLookup } from '../douars/douarsApi'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
@@ -9,10 +10,18 @@ import { formatPoints } from '../../lib/formatNumber'
 import { frequencyLabel, problemTypeLabel, severityLabel, waterSourceLabel } from '../../lib/reportFieldLabels'
 import { reportStatusLabel, validationDecisionLabel } from '../../lib/statusLabels'
 import { useReportDetail } from './reportsApi'
+import { ValidationForm } from './ValidationForm'
+
+// Section 5: only REJECTED/CONVERTED_TO_PROJECT block a new validation
+// server-side (`_TERMINAL_STATUSES` in `backend/app/api/routes/
+// validations.py`) — mirrored here so the form simply doesn't render
+// instead of being submitted and bouncing off a 409.
+const TERMINAL_REPORT_STATUSES = new Set(['rejected', 'converted_to_project'])
 
 export function ReportDetailPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as SupportedLanguage
+  const { user } = useAuth()
   const { reportId } = useParams<{ reportId: string }>()
   const { data: report, isPending, isError, error, refetch } = useReportDetail(reportId ?? '')
   const douars = useDouarsLookup()
@@ -131,6 +140,12 @@ export function ReportDetailPage() {
           </div>
         )}
       </Section>
+
+      {user?.role === 'expert' && !TERMINAL_REPORT_STATUSES.has(report.status) && (
+        <Section title={t('reports.validation_form_title')}>
+          <ValidationForm reportId={report.id} />
+        </Section>
+      )}
 
       <Section title={t('reports.section_validations')}>
         {report.validations.length === 0 ? (

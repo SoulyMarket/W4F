@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthProvider } from '../auth/AuthContext'
 import i18n from '../../i18n'
 import { apiFetch } from '../../lib/api'
 import { ReportDetailPage } from './ReportDetailPage'
@@ -72,9 +74,11 @@ function renderPage(reportId = 'r1') {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[`/reports/${reportId}`]}>
-        <Routes>
-          <Route path="/reports/:reportId" element={<ReportDetailPage />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/reports/:reportId" element={<ReportDetailPage />} />
+          </Routes>
+        </AuthProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -125,5 +129,78 @@ describe('ReportDetailPage', () => {
 
     await waitFor(() => expect(screen.getByText('تعذر تحميل تفاصيل البلاغ')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'إعادة المحاولة' })).toBeInTheDocument()
+  })
+})
+
+const EXPERT_ME = {
+  id: 'u2',
+  full_name: 'Expert Demo',
+  email: 'expert@w4f.ma',
+  role: 'expert',
+  preferred_language: 'ar',
+  territories: [],
+}
+
+describe('ReportDetailPage — expert validation form', () => {
+  beforeEach(() => {
+    mockedApiFetch.mockReset()
+    void i18n.changeLanguage('ar')
+    localStorage.clear()
+    localStorage.setItem('w4f_access_token', 'expert-token')
+    localStorage.setItem('w4f_refresh_token', 'expert-refresh')
+  })
+
+  it('shows the form for an expert on a non-terminal report, and hides it after a terminal status', async () => {
+    mockedApiFetch.mockImplementation((path: string, options?: { method?: string }) => {
+      if (path === '/auth/me') return Promise.resolve(EXPERT_ME)
+      if (path.startsWith('/douars')) return Promise.resolve(DOUAR_LIST)
+      if (path === '/reports/r1' && (!options?.method || options.method === 'GET')) {
+        return Promise.resolve(detail({ status: 'submitted' }))
+      }
+      return Promise.reject(new Error(`unexpected request: ${options?.method ?? 'GET'} ${path}`))
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('إضافة تحقق')).toBeInTheDocument())
+  })
+
+  it('hides the form once the report is in a terminal status', async () => {
+    mockedApiFetch.mockImplementation((path: string) => {
+      if (path === '/auth/me') return Promise.resolve(EXPERT_ME)
+      if (path.startsWith('/douars')) return Promise.resolve(DOUAR_LIST)
+      if (path === '/reports/r1') return Promise.resolve(detail({ status: 'rejected' }))
+      return Promise.reject(new Error(`unexpected path: ${path}`))
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('دوار الأمل')).toBeInTheDocument())
+    expect(screen.queryByText('إضافة تحقق')).not.toBeInTheDocument()
+  })
+
+  it('submits a decision and refetches the report, picking up the server-assigned new status', async () => {
+    mockedApiFetch.mockImplementation((path: string, options?: { method?: string; body?: unknown }) => {
+      if (path === '/auth/me') return Promise.resolve(EXPERT_ME)
+      if (path.startsWith('/douars')) return Promise.resolve(DOUAR_LIST)
+      if (path === '/reports/r1/validations' && options?.method === 'POST') {
+        return Promise.resolve({ id: 'v1', report_id: 'r1', new_report_status: 'validated', ...(options.body as object) })
+      }
+      if (path === '/reports/r1') return Promise.resolve(detail({ status: 'submitted' }))
+      return Promise.reject(new Error(`unexpected request: ${options?.method ?? 'GET'} ${path}`))
+    })
+    const user = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(screen.getByText('إضافة تحقق')).toBeInTheDocument())
+
+    await user.selectOptions(screen.getByLabelText('القرار'), 'validated')
+    await user.click(screen.getByRole('button', { name: 'إرسال' }))
+
+    await waitFor(() => expect(screen.getByText('تم تسجيل التحقق بنجاح')).toBeInTheDocument())
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      '/reports/r1/validations',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })

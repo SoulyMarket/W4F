@@ -1342,7 +1342,47 @@ requests, beyond the stale 401 console entries confirmed (again) to be
 leftover from an earlier token-refresh event, not a live issue — every
 request in this pass returned 200.
 
+### Step 3.4 — Expert validation (the action side of report detail)
+
+`POST /reports/{id}/validations` wired into `ReportDetailPage` as a new
+`ValidationForm`, shown only when `user.role === 'expert'` *and* the
+report isn't already in a terminal status (`rejected` /
+`converted_to_project` — mirrors the backend's own `_TERMINAL_STATUSES`
+in `validations.py`, which 409s on either, so the form simply doesn't
+render instead of letting an expert submit something the server would
+reject anyway). Decision/comment/proposed-solution/urgency-opinion
+fields; on success, invalidates both the report-detail and reports-list
+query caches rather than patching the response in locally — section 5's
+validation endpoint also recomputes the report's priority score
+server-side, so a full refetch is what picks up the new status *and* the
+new score/breakdown together, not just the validation record itself.
+
+**Found while writing the test for this, before it ever shipped**: the
+i18n key the decision `<select>`'s own label used
+(`reports.validation_decision_label`) was never added to either `ar.json`
+or `fr.json` — i18next's `defaultValue` fallback would have silently
+shown the raw key string on screen instead of throwing, so this would
+only have surfaced as mysteriously wrong-looking text, not a crash. The
+new Vitest test asserting the actual Arabic label text caught it
+immediately (`getByLabelText('القرار')` failed until the key was added).
+Same class of gap as any other string-literal i18n key — nothing
+type-checks these against the resource files — but the test's job here
+was exactly to catch it before a real reviewer would have.
+
+3 new Vitest tests (form visibility for a non-terminal vs. terminal
+report, and the full submit → refetch → updated-status flow with a
+mocked expert session) — 32 total, all passing. tsc/oxlint/build clean.
+
+**Verified end-to-end in the browser as the seeded expert account**
+(Arabic): opened a `submitted` report, filled only "القرار" with "طُلبت
+إعادة التحقق" (recheck requested) and submitted — the status badge at
+the top of the page flipped from «تم التسجيل» to «طُلبت إعادة التحقق»,
+a success message appeared, the form reset, and the new entry appeared
+immediately in «سجل التحقق» with today's date — all from one real
+`POST .../validations` (`201 Created`) against the live backend followed
+by the automatic refetch. This closes the loop this phase's reports
+screens had left open: list → detail → act → see the result, for real.
+
 Not yet built: map (colored by priority, offline tiles out of scope for
-web — that's the Android screen), expert validation screen (the action
-side of what's now a read-only detail view), project board, admin users/
-territories/audit, scoring weights editor. Phase 4 (AI) — not started.
+web — that's the Android screen), project board, admin users/territories/
+audit, scoring weights editor. Phase 4 (AI) — not started.

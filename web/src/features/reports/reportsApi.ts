@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../../lib/api'
 
 export interface ReportDto {
@@ -102,5 +102,34 @@ export function useReportDetail(reportId: string) {
   return useQuery({
     queryKey: ['reports', 'detail', reportId],
     queryFn: () => apiFetch<ReportDetailDto>(`/reports/${reportId}`),
+  })
+}
+
+export interface ValidationCreateInput {
+  decision: string
+  comment?: string
+  proposed_solution?: string
+  urgency_opinion?: string
+}
+
+export interface ValidationCreateDto extends ValidationDto {
+  report_id: string
+  new_report_status: string
+}
+
+// Section 5: an expert's decision also recomputes the report's priority
+// score server-side — refetching the detail (not just patching the
+// validations array locally) is what picks up the new status *and* the
+// new score/breakdown in one round trip, rather than drifting out of
+// sync with what the server actually did.
+export function useCreateValidation(reportId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ValidationCreateInput) =>
+      apiFetch<ValidationCreateDto>(`/reports/${reportId}/validations`, { method: 'POST', body: input }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['reports', 'detail', reportId] })
+      void queryClient.invalidateQueries({ queryKey: ['reports', 'list'] })
+    },
   })
 }
