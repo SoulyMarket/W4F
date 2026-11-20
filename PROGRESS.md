@@ -1708,12 +1708,152 @@ success log exactly) and renders correctly on the web reports list.
 **Real, separate finding surfaced while verifying this**: the seeded
 `admin@w4f.ma` account has `territories: []`. `GET /reports` and `GET
 /douars` are territory-scoped for every role including admin, so admin
-currently sees **zero** reports and **zero** douars — not a bug in the
-sense of wrong data, but almost certainly not the intended behavior for
-an "admin sees everything" role. `manager@w4f.ma` (territory "الحوز")
-sees all 19 reports correctly, including the one from this report.
-Not fixed yet — flagged here since it would have looked like a second
-data-loss bug to anyone checking as admin instead of as manager.
-Likely fix is either seeding admin with every territory, or (cleaner)
-making the admin role bypass territory scoping entirely in the reports/
-douars query layer, same as it already does elsewhere.
+currently sees **zero** reports and **zero** douars.
+
+**Correction to this entry, written before re-reading section 1**: the
+line above called this "almost certainly not the intended behavior for
+an 'admin sees everything' role" — wrong. Section 1's own role table is
+explicit: admin's permissions are "Manage users, roles, territories;
+read audit logs; system settings. **No business decisions**." Dashboard,
+map, and reports are listed only under manager/expert, never admin.
+`territory_scope.py`'s own module docstring is equally explicit: "A user
+with no territory assignment sees nothing, not everything: least
+privilege is the default, not an opt-in." Admin having no territories
+is the seed data correctly reflecting a role that was never supposed to
+browse reports in the first place — not a scoping bug to patch around.
+No backend change made for this; see step 3.9 below for how it was
+actually resolved (giving admin an explicit, visible way to assign
+itself or anyone else a territory, through the UI, same as any other
+user — not a role-level bypass that would contradict section 1).
+
+### Step 3.9 — Finishing Phase 3 (map, territories admin, scoring weights editor) + Android appearance rework
+
+Directly requested: "finish phase 3 and rework the android app's
+appearance." Closes every item step 3.6 had listed as "not yet built."
+
+**Backend**: `UserOut` gained a `territory_ids: list[uuid.UUID] =
+Field(default_factory=list)` field — there was previously no way to read
+back which territories a user already has (`PUT /users/{id}/territories`
+was write-only; `GET /users`/`GET /users/{id}` never included it), which
+blocked building any UI that shows a user's *current* assignment before
+letting someone change it. `list_users`/`get_user` now populate it (one
+batched `UserTerritory` query for the list route, not N+1); every other
+`users.py` route keeps returning a plain `User` ORM object, which
+`model_config = {"from_attributes": True}` happily reads as `[]` via the
+field's default since a bare `User` row has no such attribute — verified
+this fallback actually works rather than assuming it (`test_user_
+territories_are_visible_on_get_user_and_list_users`, 201 backend tests
+now, was 200).
+
+**Web — three new screens**, reusing every step-3.7/3.8 convention
+(`Button`/`Card`/`TableContainer`/`formStyles`, framer-motion list
+stagger, responsive card/table split, the Arabic/French i18n pattern):
+
+- **`/map`** (`features/map/`) — manager-only (section 1: "dashboard and
+  map" is manager's own permission, matching the backend's existing
+  `require_roles(MANAGER)` on `GET /dashboard/map`). Built on
+  `maplibre-gl` (already an unused dependency from step 3.1's original
+  scaffold) — `Marker`/`Popup`/`NavigationControl` colored by the same
+  priority logic as the Android app's `MapScreen.kt` (red ≥70, amber
+  ≥40, blue below, green once a project is underway, gray with no
+  reports yet), same public demo style URL, same reasoning (no tile-
+  hosting contract of its own). **Real bug found and fixed**: markers
+  never rendered on first load — `read_console_messages` showed `Error:
+  Worker failed to load` from maplibre-gl's own tile-processing Worker.
+  Root cause: Vite's dev-server dependency pre-bundling moves the
+  library into `node_modules/.vite/deps/`, which breaks the Worker's
+  self-referencing URL (a known maplibre-gl/Vite interaction, not a
+  project-specific mistake). Fixed with `optimizeDeps: { exclude:
+  ['maplibre-gl'] }` in `vite.config.ts` plus the by-now-familiar
+  `rm -rf node_modules/.vite` + dev-server restart; confirmed live
+  afterward — all 10 of the manager's douars appeared as colored
+  markers, popup showed the right name/score/report-count on click.
+- **`/scoring`** (`features/scoring/`) — manager-only (section 1: "edit
+  scoring weights" is manager's permission; the backend's own `PUT
+  /scoring-config` is `require_roles(MANAGER)`, `GET` allows everyone).
+  Seven sliders (0–100, matching `ScoringConfigUpdate`'s own per-
+  criterion validation — no sum-to-100 constraint exists server-side),
+  Save triggers the existing recompute endpoint and reports how many
+  open reports were rescored. **Real bug found and fixed during its own
+  test**: the "saved" success banner was gated on `!isDirty` (local
+  weights matching server `data.weights`), which depends on `PUT`'s
+  `invalidateQueries` triggering a background refetch that resolves
+  *after* the mutation's own `onSuccess` already fires — so the banner
+  never appeared in the gap between the two. Simplified to show the
+  banner directly on `onSuccess` and clear it on the next edit instead
+  of chasing refetch timing. Verified live as manager: moved "people
+  affected" from 25→40, saved, got "تم الحفظ — أُعيد احتساب 20 بلاغ",
+  and the reports list's own scores changed accordingly (e.g. 58→59)
+  confirming the recompute really ran, not just the config row.
+  Also fixed in passing: `ReportDetailPage`'s own "لماذا هذه الأولوية؟"
+  breakdown table rendered `entry.criterion` raw (the backend's English
+  key, e.g. "water_quality_risk") instead of a translated label — same
+  underlying label set this page needed, so both now share `lib/
+  statusLabels.ts`'s new `scoringCriterionLabel()`.
+- **`/admin/territories`** (`features/admin/TerritoriesPage.tsx`) —
+  admin-only, explicitly deferred in step 3.6. Lists provinces with
+  their communes grouped underneath (the model is never more than two
+  levels deep, so no tree widget was needed), a create form (`POST
+  /territories`), and click-to-edit inline rename for both name_ar/
+  name_fr (`PATCH /territories/{id}`) rather than a separate edit form —
+  same "small contained interaction, no extra ceremony" reasoning as the
+  admin users page's own inline two-step confirm.
+- **Per-user territory assignment**, added to the existing admin users
+  page rather than as a fourth screen (`UserTerritoriesEditor.tsx`): a
+  "الترابات" action per row opens a checkbox list of every territory,
+  pre-checked from the user's own `territory_ids`, `PUT /users/{id}/
+  territories` on save. This is what actually closed the admin-
+  territory-scoping finding from the entry above — assigned
+  `admin@w4f.ma` to "الحوز" through this exact UI and confirmed via
+  `GET /auth/me` and a live `GET /reports` call that it now sees all 21
+  reports, with no backend scoping change needed.
+
+13 new Vitest tests across `ScoringWeightsPage.test.tsx`,
+`TerritoriesPage.test.tsx`, `MapPage.test.tsx` (mocks `maplibre-gl`
+entirely — jsdom has no WebGL context, so the real library would throw
+the moment a `Map` tried to create one; same split as Android's own
+`MapViewModel` unit tests vs. `MapScreen`'s on-device-only verification)
+and one added to `UsersPage.test.tsx` — 55 total (was 47), all passing.
+tsc/oxlint/build clean. Bundle grew to ~1.65 MB (gzip ~467 KB) with
+`maplibre-gl` added — the code-splitting item deferred since step 3.7 is
+now considerably more worth doing, still not blocking for this
+prototype.
+
+**Android appearance rework**: unrelated to the web work above but
+requested in the same message. `theme/Color.kt` and `theme/Theme.kt`
+were still Android Studio's unmodified "Empty Compose Activity"
+template — literally `Purple80`/`Purple40`/`PurpleGrey`/`Pink`, never
+touched since scaffolding — and `W4FTheme` additionally defaulted
+`dynamicColor = true`, so on any Android 12+ device the app's actual
+on-screen color came from Material You's wallpaper-derived palette, not
+from either the template colors or any color W4F chose. This is the
+Android equivalent of step 3.7's web finding, except here the problem
+really was the palette (Compose's Material3 components are already
+consistent by construction — there was no per-screen hand-rolled-
+button-style drift to fix the way web had). Replaced with the same
+sky/cyan tokens as the web dashboard's `index.css` `@theme` block
+(`#0284C7` primary / dark `#38BDF8`, etc.) mapped onto M3's color roles,
+`dynamicColor` defaulted to `false` (kept available as an explicit
+opt-in for a possible future "use device colors" setting, just no
+longer silently overriding the brand), and a `Shapes()` matching the
+web's rounded-xl/rounded-md/rounded-full corner vocabulary. A single
+theme-level change cascades to every Material3 `Button`/`Card`/
+`OutlinedTextField` across the app with no per-screen edits needed,
+since `MainActivity` already wraps everything in one `W4FTheme { Surface
+{ MainNavigation() } }`. The map legend's own semantic status colors
+(`MapScreen.kt`'s red/amber/green/gray-by-priority) were deliberately
+left untouched — those carry meaning independent of the app's theme,
+same reasoning as the web dashboard chart's own fixed palette array.
+**Not verified on-device**: the Android SDK not present in this
+session's environment (confirmed: `AppData/Local/Android/Sdk` doesn't
+exist here, unlike the environment used earlier in this project),
+so this couldn't be built, emulator-tested, or screenshotted this
+pass — correctness here rests on the Material3 `lightColorScheme`/
+`darkColorScheme`/`Shapes` API being stable, well-known, and unchanged
+(verified by reading this project's own existing calls to it, not
+from memory alone). Flagged here rather than silently claimed as
+verified; needs a real on-device check next time Android tooling is
+available.
+
+Not yet built: Phase 4 (AI assistance — anomaly detection, recurring-
+problem detection, AI-drafted monthly summaries) — not started at all.
