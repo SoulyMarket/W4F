@@ -43,6 +43,12 @@ class UserOut(BaseModel):
     is_active: bool
     last_login_at: datetime | None
     created_at: datetime
+    # Defaults to [] when read straight off the ORM object (create/update/
+    # deactivate/reset-password don't look this up) — list_users/get_user
+    # populate the real value explicitly, since a plain User row has no
+    # such attribute of its own (section 1.5's territory assignment lives
+    # in the user_territories association table, not on User).
+    territory_ids: list[uuid.UUID] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

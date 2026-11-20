@@ -12,7 +12,7 @@ import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { formatPoints } from '../../lib/formatNumber'
 import { frequencyLabel, problemTypeLabel, severityLabel, waterSourceLabel } from '../../lib/reportFieldLabels'
-import { reportStatusLabel, validationDecisionLabel } from '../../lib/statusLabels'
+import { reportStatusLabel, scoringCriterionLabel, validationDecisionLabel } from '../../lib/statusLabels'
 import { useReportDetail } from './reportsApi'
 import { ValidationForm } from './ValidationForm'
 
@@ -131,7 +131,7 @@ export function ReportDetailPage() {
               <tbody className="divide-y divide-border">
                 {report.priority.breakdown.map((entry) => (
                   <tr key={entry.criterion}>
-                    <td className="px-2 py-1.5 text-foreground">{entry.criterion}</td>
+                    <td className="px-2 py-1.5 text-foreground">{scoringCriterionLabel(t, entry.criterion)}</td>
                     <td className="px-2 py-1.5 text-foreground">{formatPoints(entry.points)}</td>
                     <td className="px-2 py-1.5 text-foreground">{entry.reason}</td>
                   </tr>

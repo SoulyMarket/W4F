@@ -25,6 +25,7 @@ function user(overrides: Partial<UserDto> = {}): UserDto {
     is_active: true,
     last_login_at: '2026-10-20T08:00:00Z',
     created_at: '2026-09-01T08:00:00Z',
+    territory_ids: [],
     ...overrides,
   }
 }
@@ -111,5 +112,45 @@ describe('UsersPage', () => {
     await userEventInstance.click(screen.getAllByText('إلغاء')[0])
 
     expect(mockedApiFetch).not.toHaveBeenCalled()
+  })
+
+  it('opens the territories editor pre-checked with the user’s current assignment and saves the new selection', async () => {
+    mockedApiFetch.mockImplementation((path: string, options?: { method?: string }) => {
+      if (path === '/users?page_size=100') {
+        return Promise.resolve({ items: [user({ territory_ids: ['t1'] })], total: 1, page: 1, page_size: 100 })
+      }
+      if (path === '/territories') {
+        return Promise.resolve([
+          { id: 't1', name_ar: 'الحوز', name_fr: 'Al Haouz', level: 'province', parent_id: null },
+          { id: 't2', name_ar: 'أسفي', name_fr: 'Safi', level: 'province', parent_id: null },
+        ])
+      }
+      if (path === '/users/u1/territories' && options?.method === 'PUT') {
+        return Promise.resolve({ ok: true })
+      }
+      return Promise.reject(new Error(`unexpected request: ${options?.method ?? 'GET'} ${path}`))
+    })
+    const userEventInstance = userEvent.setup()
+
+    renderPage()
+    await waitFor(() => expect(screen.getAllByText('Expert Demo').length).toBeGreaterThan(0))
+
+    await userEventInstance.click(screen.getAllByText('الترابات')[0])
+    await waitFor(() => expect(screen.getByText('Safi (إقليم)')).toBeInTheDocument())
+
+    const haouzCheckbox = screen.getByLabelText('Al Haouz (إقليم)') as HTMLInputElement
+    const safiCheckbox = screen.getByLabelText('Safi (إقليم)') as HTMLInputElement
+    expect(haouzCheckbox.checked).toBe(true)
+    expect(safiCheckbox.checked).toBe(false)
+
+    await userEventInstance.click(safiCheckbox)
+    await userEventInstance.click(screen.getByRole('button', { name: 'حفظ' }))
+
+    await waitFor(() =>
+      expect(mockedApiFetch).toHaveBeenCalledWith(
+        '/users/u1/territories',
+        expect.objectContaining({ method: 'PUT', body: { territory_ids: ['t1', 't2'] } }),
+      ),
+    )
   })
 })

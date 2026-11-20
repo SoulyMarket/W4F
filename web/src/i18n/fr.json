@@ -261,5 +261,73 @@
     "report_count": "Nombre de signalements",
     "no_data": "Aucune donnée",
     "loading_error": "Impossible de charger le tableau de bord"
+  },
+  "scoring": {
+    "title": "Pondération de la priorité",
+    "hint": "Chaque critère va de 0 à 100 — son poids relatif dans le calcul du score de priorité global",
+    "loading_error": "Impossible de charger la pondération",
+    "column_criterion": "Critère",
+    "column_weight": "Poids",
+    "criteria": {
+      "people_affected": "Personnes touchées",
+      "duration": "Durée du problème",
+      "frequency": "Fréquence des coupures",
+      "no_alternative": "Absence de source alternative",
+      "distance": "Distance à la source alternative",
+      "severity": "Degré de gravité",
+      "water_quality_risk": "Risque pour la qualité de l'eau"
+    },
+    "save_button": "Enregistrer et recalculer",
+    "saving": "Enregistrement…",
+    "save_error": "Impossible d'enregistrer la pondération",
+    "save_success": "Enregistré — {{count}} signalement(s) recalculé(s)",
+    "reset_button": "Annuler les modifications"
+  },
+  "territories": {
+    "title": "Territoires",
+    "loading_error": "Impossible de charger les territoires",
+    "column_name_ar": "Nom (arabe)",
+    "column_name_fr": "Nom (français)",
+    "column_level": "Niveau",
+    "column_parent": "Rattaché à",
+    "no_parent": "Aucun (niveau racine)",
+    "level_province": "Province",
+    "level_commune": "Commune",
+    "new_button": "Nouveau territoire",
+    "create_form_title": "Créer un territoire",
+    "name_ar_label": "Nom (arabe)",
+    "name_fr_label": "Nom (français)",
+    "level_label": "Niveau",
+    "level_placeholder": "Choisir le niveau",
+    "parent_label": "Territoire parent",
+    "parent_placeholder": "Aucun",
+    "create_submit": "Créer",
+    "create_submitting": "Création…",
+    "create_error": "Impossible de créer le territoire",
+    "rename_error": "Impossible de modifier le territoire",
+    "empty": "Aucun territoire pour le moment",
+    "close": "Fermer"
+  },
+  "user_territories": {
+    "button": "Territoires",
+    "title": "Territoires de l'utilisateur",
+    "none_assigned": "Aucun territoire assigné à cet utilisateur",
+    "save_button": "Enregistrer",
+    "saving": "Enregistrement…",
+    "save_error": "Impossible d'enregistrer les territoires",
+    "close": "Fermer"
+  },
+  "map": {
+    "title": "Carte",
+    "loading_error": "Impossible de charger la carte",
+    "empty": "Aucun douar avec des coordonnées à afficher",
+    "legend_no_reports": "Aucun signalement",
+    "legend_low": "Priorité faible",
+    "legend_medium": "Priorité moyenne",
+    "legend_high": "Priorité élevée",
+    "legend_project_underway": "Projet en cours",
+    "marker_score": "Score : {{score}}",
+    "marker_reports": "Nombre de signalements : {{count}}",
+    "marker_no_score": "Priorité non encore calculée"
   }
 }

@@ -150,6 +150,38 @@ def test_assigning_territories_replaces_previous_assignment(client, db_session):
     assert {row.territory_id for row in assigned} == {t2.id}
 
 
+def test_user_territories_are_visible_on_get_user_and_list_users(client, db_session):
+    make_user(db_session)
+    target = User(
+        full_name="Expert",
+        email="expert4@example.com",
+        password_hash=hash_password(PASSWORD),
+        role=UserRole.EXPERT,
+    )
+    db_session.add(target)
+    db_session.flush()
+    t1 = make_territory(db_session, name="T1")
+    headers = auth_headers(client, "admin@example.com")
+
+    client.put(
+        f"/api/v1/users/{target.id}/territories",
+        json={"territory_ids": [str(t1.id)]},
+        headers=headers,
+    )
+
+    get_resp = client.get(f"/api/v1/users/{target.id}", headers=headers)
+    assert get_resp.json()["territory_ids"] == [str(t1.id)]
+
+    list_resp = client.get("/api/v1/users", headers=headers)
+    listed = next(u for u in list_resp.json()["items"] if u["id"] == str(target.id))
+    assert listed["territory_ids"] == [str(t1.id)]
+
+    # A user nobody has assigned territories to gets `[]`, not a missing
+    # field or a 500 from the ORM object lacking that attribute.
+    admin_self = next(u for u in list_resp.json()["items"] if u["email"] == "admin@example.com")
+    assert admin_self["territory_ids"] == []
+
+
 def test_non_admin_cannot_assign_territories(client, db_session):
     make_user(db_session, role=UserRole.MANAGER, email="manager2@example.com")
     target = User(

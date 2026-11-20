@@ -40,6 +40,32 @@ def _get_user_or_404(db: Session, user_id, lang: str) -> User:
     return user
 
 
+def _territory_ids_by_user(db: Session, user_ids: list) -> dict:
+    """One batched query instead of one per user — this prototype's user
+    count makes the difference negligible, but there's no reason to write
+    the N+1 version when the grouped one is just as simple."""
+    by_user: dict = {user_id: [] for user_id in user_ids}
+    rows = db.query(UserTerritory).filter(UserTerritory.user_id.in_(user_ids)).all()
+    for row in rows:
+        by_user.setdefault(row.user_id, []).append(row.territory_id)
+    return by_user
+
+
+def _user_out(user: User, territory_ids: list) -> UserOut:
+    return UserOut(
+        id=user.id,
+        full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        role=user.role,
+        preferred_language=user.preferred_language,
+        is_active=user.is_active,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+        territory_ids=territory_ids,
+    )
+
+
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     body: UserCreate,
@@ -95,8 +121,9 @@ def list_users(
         .limit(page_size)
         .all()
     )
+    territory_ids_by_user = _territory_ids_by_user(db, [u.id for u in items])
     return UserListOut(
-        items=[UserOut.model_validate(u) for u in items],
+        items=[_user_out(u, territory_ids_by_user.get(u.id, [])) for u in items],
         total=total,
         page=page,
         page_size=page_size,
@@ -109,8 +136,10 @@ def get_user(
     request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(_require_admin),
-) -> User:
-    return _get_user_or_404(db, user_id, get_request_language(request))
+) -> UserOut:
+    user = _get_user_or_404(db, user_id, get_request_language(request))
+    territory_ids = [row.territory_id for row in db.query(UserTerritory).filter_by(user_id=user.id).all()]
+    return _user_out(user, territory_ids)
 
 
 @router.patch("/{user_id}", response_model=UserOut)

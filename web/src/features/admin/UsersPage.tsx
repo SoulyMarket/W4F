@@ -7,6 +7,7 @@ import { TableContainer } from '../../components/TableContainer'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { CreateUserForm } from './CreateUserForm'
+import { UserTerritoriesEditor } from './UserTerritoriesEditor'
 import { useDeactivateUser, useResetPassword, useUsersList, type UserDto } from './usersApi'
 
 type ConfirmingAction = { userId: string; kind: 'deactivate' | 'reset' } | null
@@ -21,6 +22,7 @@ export function UsersPage() {
   // live check here it simply auto-dismissed instead of prompting,
   // silently no-opping the action) — this stays in the page itself.
   const [confirming, setConfirming] = useState<ConfirmingAction>(null)
+  const [editingTerritoriesUserId, setEditingTerritoriesUserId] = useState<string | null>(null)
   const deactivateMutation = useDeactivateUser()
   const resetPasswordMutation = useResetPassword()
 
@@ -34,6 +36,8 @@ export function UsersPage() {
       })
     }
   }
+
+  const editingTerritoriesUser = data?.items.find((user) => user.id === editingTerritoriesUserId) ?? null
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,6 +74,12 @@ export function UsersPage() {
       </AnimatePresence>
 
       <AnimatePresence>{showCreateForm && <CreateUserForm onDone={() => setShowCreateForm(false)} />}</AnimatePresence>
+
+      <AnimatePresence>
+        {editingTerritoriesUser && (
+          <UserTerritoriesEditor user={editingTerritoriesUser} onDone={() => setEditingTerritoriesUserId(null)} />
+        )}
+      </AnimatePresence>
 
       {isPending ? (
         <p className="text-foreground">{t('common.loading')}</p>
@@ -114,6 +124,7 @@ export function UsersPage() {
                     onDeactivate={() => setConfirming({ userId: user.id, kind: 'deactivate' })}
                     onConfirm={handleConfirm}
                     onCancel={() => setConfirming(null)}
+                    onEditTerritories={() => setEditingTerritoriesUserId(user.id)}
                   />
                 </div>
               </Card>
@@ -159,6 +170,7 @@ export function UsersPage() {
                         onDeactivate={() => setConfirming({ userId: user.id, kind: 'deactivate' })}
                         onConfirm={handleConfirm}
                         onCancel={() => setConfirming(null)}
+                        onEditTerritories={() => setEditingTerritoriesUserId(user.id)}
                       />
                     </td>
                   </motion.tr>
@@ -179,6 +191,7 @@ function UserRowActions({
   onDeactivate,
   onConfirm,
   onCancel,
+  onEditTerritories,
 }: {
   user: UserDto
   confirming: ConfirmingAction
@@ -186,6 +199,7 @@ function UserRowActions({
   onDeactivate: () => void
   onConfirm: (user: UserDto, kind: 'deactivate' | 'reset') => void
   onCancel: () => void
+  onEditTerritories: () => void
 }) {
   const { t } = useTranslation()
 
@@ -211,6 +225,13 @@ function UserRowActions({
 
   return (
     <div className="flex flex-wrap gap-3">
+      <button
+        type="button"
+        onClick={onEditTerritories}
+        className="cursor-pointer text-xs font-medium text-primary hover:underline"
+      >
+        {t('user_territories.button')}
+      </button>
       <button type="button" onClick={onReset} className="cursor-pointer text-xs font-medium text-primary hover:underline">
         {t('admin.reset_password_button')}
       </button>

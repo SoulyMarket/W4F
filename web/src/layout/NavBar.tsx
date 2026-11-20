@@ -26,10 +26,17 @@ export function NavBar() {
       {(user.role === 'manager' || user.role === 'admin') && (
         <NavItem to="/projects" label={t('projects.title')} />
       )}
+      {user.role === 'manager' && (
+        <>
+          <NavItem to="/map" label={t('map.title')} />
+          <NavItem to="/scoring" label={t('scoring.title')} />
+        </>
+      )}
       {user.role === 'admin' && (
         <>
           <NavItem to="/admin/users" label={t('admin.users_title')} />
           <NavItem to="/admin/audit" label={t('admin.audit_title')} />
+          <NavItem to="/admin/territories" label={t('territories.title')} />
         </>
       )}
     </nav>

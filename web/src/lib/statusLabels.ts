@@ -69,3 +69,11 @@ export const AUDIT_ACTIONS = [
 export function auditActionLabel(t: TFunction, action: string): string {
   return t(`audit_action.${action}`, { defaultValue: action })
 }
+
+// Shared by the scoring weights editor and the report detail page's own
+// "why this priority" breakdown (`ReportDetailPage.tsx`), which until now
+// rendered `entry.criterion` raw (the backend's own English key, e.g.
+// "water_quality_risk") instead of a translated label.
+export function scoringCriterionLabel(t: TFunction, criterion: string): string {
+  return t(`scoring.criteria.${criterion}`, { defaultValue: criterion })
+}

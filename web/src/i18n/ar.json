@@ -261,5 +261,73 @@
     "report_count": "عدد البلاغات",
     "no_data": "لا توجد بيانات",
     "loading_error": "تعذر تحميل لوحة القيادة"
+  },
+  "scoring": {
+    "title": "أوزان الأولوية",
+    "hint": "كل معيار من 0 إلى 100 — يحدد وزنه النسبي في حساب درجة الأولوية الإجمالية",
+    "loading_error": "تعذر تحميل أوزان الأولوية",
+    "column_criterion": "المعيار",
+    "column_weight": "الوزن",
+    "criteria": {
+      "people_affected": "عدد الأشخاص المتضررين",
+      "duration": "مدة المشكل",
+      "frequency": "تواتر الانقطاع",
+      "no_alternative": "غياب مصدر بديل",
+      "distance": "المسافة إلى المصدر البديل",
+      "severity": "درجة الخطورة",
+      "water_quality_risk": "خطر على جودة الماء"
+    },
+    "save_button": "حفظ وإعادة الاحتساب",
+    "saving": "جارٍ الحفظ…",
+    "save_success": "تم الحفظ — أُعيد احتساب {{count}} بلاغ",
+    "save_error": "تعذر حفظ الأوزان",
+    "reset_button": "تراجع عن التعديلات"
+  },
+  "territories": {
+    "title": "الترابات",
+    "loading_error": "تعذر تحميل الترابات",
+    "column_name_ar": "الاسم (عربي)",
+    "column_name_fr": "الاسم (فرنسي)",
+    "column_level": "المستوى",
+    "column_parent": "التابع لـ",
+    "no_parent": "بدون (مستوى جذري)",
+    "level_province": "إقليم",
+    "level_commune": "جماعة",
+    "new_button": "ترابة جديدة",
+    "create_form_title": "إنشاء ترابة",
+    "name_ar_label": "الاسم (عربي)",
+    "name_fr_label": "الاسم (فرنسي)",
+    "level_label": "المستوى",
+    "level_placeholder": "اختر المستوى",
+    "parent_label": "الترابة الأم",
+    "parent_placeholder": "بدون",
+    "create_submit": "إنشاء",
+    "create_submitting": "جارٍ الإنشاء…",
+    "create_error": "تعذر إنشاء الترابة",
+    "rename_error": "تعذر تعديل الترابة",
+    "empty": "لا توجد ترابات بعد",
+    "close": "إغلاق"
+  },
+  "user_territories": {
+    "button": "الترابات",
+    "title": "ترابات المستخدم",
+    "none_assigned": "لم تُسند أي ترابة لهذا المستخدم",
+    "save_button": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "save_error": "تعذر حفظ الترابات",
+    "close": "إغلاق"
+  },
+  "map": {
+    "title": "الخريطة",
+    "loading_error": "تعذر تحميل الخريطة",
+    "empty": "لا توجد دواوير ذات إحداثيات لعرضها",
+    "legend_no_reports": "بدون بلاغات",
+    "legend_low": "أولوية منخفضة",
+    "legend_medium": "أولوية متوسطة",
+    "legend_high": "أولوية عالية",
+    "legend_project_underway": "مشروع قيد الإنجاز",
+    "marker_score": "الدرجة: {{score}}",
+    "marker_reports": "عدد البلاغات: {{count}}",
+    "marker_no_score": "لم تُحتسب الأولوية بعد"
   }
 }

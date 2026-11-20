@@ -11,6 +11,7 @@ export interface UserDto {
   is_active: boolean
   last_login_at: string | null
   created_at: string
+  territory_ids: string[]
 }
 
 interface UserListDto {

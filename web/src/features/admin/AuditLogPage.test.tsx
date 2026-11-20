@@ -13,7 +13,7 @@ vi.mock('../../lib/api', async () => {
 const mockedApiFetch = vi.mocked(apiFetch)
 
 const USERS_LIST = {
-  items: [{ id: 'u1', full_name: 'Admin Demo', email: 'admin@w4f.ma', phone: null, role: 'admin', preferred_language: 'ar', is_active: true, last_login_at: null, created_at: '2026-01-01T00:00:00Z' }],
+  items: [{ id: 'u1', full_name: 'Admin Demo', email: 'admin@w4f.ma', phone: null, role: 'admin', preferred_language: 'ar', is_active: true, last_login_at: null, created_at: '2026-01-01T00:00:00Z', territory_ids: [] }],
   total: 1,
   page: 1,
   page_size: 100,
