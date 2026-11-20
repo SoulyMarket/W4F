@@ -1682,3 +1682,38 @@ fixed and re-verified end to end (manager's reports list now resolves
 real names, not UUIDs) after restarting the backend and clearing the
 dev server's own stale Vite cache (a repeat of the step 3.7 lesson,
 same fix).
+
+### Live bug report: "created a report on Android, didn't show up on web" — diagnosed, not a sync bug
+
+User-reported while actively using the Android emulator. Root cause had
+nothing to do with sync logic: during the step 3.6 admin-panel testing
+earlier in this same session, the moqaddem demo account's password had
+been reset live through the admin UI — which correctly revokes all of
+that user's refresh tokens (`backend/app/api/routes/users.py`'s
+`reset_password`, by design, section 6.12). The Android app's session
+died silently; `WM-WorkerWrapper` logs showed `SyncWorker` retrying and
+failing every ~1-2 minutes for over half an hour with no user-visible
+error (the report stayed shown locally as "قيد الإرسال" — pending —
+which is correct offline-first behavior, just not informative about
+*why* it was stuck). Confirmed via `adb logcat` plus a read-only audit-
+log query (`GET /audit?action=update&entity_type=user`, matching the
+affected `user_id`) before touching anything. With the user's explicit
+permission, reset moqaddem's password again through the admin UI to get
+a fresh working credential, then logged the Android app back in via
+`adb shell input`/`screencap`. `SyncWorker` immediately succeeded
+(`POST /sync/push` → 200 OK), and the originally-stuck report is now
+live on the backend (`synced_at` timestamp matches the WorkManager
+success log exactly) and renders correctly on the web reports list.
+
+**Real, separate finding surfaced while verifying this**: the seeded
+`admin@w4f.ma` account has `territories: []`. `GET /reports` and `GET
+/douars` are territory-scoped for every role including admin, so admin
+currently sees **zero** reports and **zero** douars — not a bug in the
+sense of wrong data, but almost certainly not the intended behavior for
+an "admin sees everything" role. `manager@w4f.ma` (territory "الحوز")
+sees all 19 reports correctly, including the one from this report.
+Not fixed yet — flagged here since it would have looked like a second
+data-loss bug to anyone checking as admin instead of as manager.
+Likely fix is either seeding admin with every territory, or (cleaner)
+making the admin role bypass territory scoping entirely in the reports/
+douars query layer, same as it already does elsewhere.
