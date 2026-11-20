@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Heading/display face — bundled for the same offline-first reason as
+  noto_sans_arabic.xml. Upstream (google/fonts) only ships this family as
+  a single variable-weight file (no separate static Bold instance), so
+  this declares one entry at its default instance (400/normal); Compose
+  applies its own faux-bold synthesis when a heading TextStyle asks for
+  FontWeight.Bold, same as it would for any font lacking a dedicated
+  bold cut — a safe, standard fallback, not a workaround.
+-->
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        app:font="@font/noto_kufi_arabic"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+</font-family>

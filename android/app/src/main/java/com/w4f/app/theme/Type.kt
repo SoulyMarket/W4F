@@ -17,6 +17,14 @@ val NotoSansArabicFamily =
     Font(R.font.noto_sans_arabic_bold, FontWeight.Bold),
   )
 
+// A distinct heading/display face — the same "real heading hierarchy
+// instead of one weight doing double duty" change made to the web
+// dashboard's own `font-heading` token (Lexend/Noto Kufi Arabic pairing
+// from the ui-ux-pro-max pass), scoped here to titleLarge/titleMedium
+// only (actual screen/section titles) — not labelLarge, which M3 also
+// uses for button text, where a display face would look misapplied.
+val NotoKufiArabicFamily = FontFamily(Font(R.font.noto_kufi_arabic, FontWeight.Normal))
+
 val Typography =
   Typography(
     bodyLarge =
@@ -37,7 +45,7 @@ val Typography =
       ),
     titleLarge =
       TextStyle(
-        fontFamily = NotoSansArabicFamily,
+        fontFamily = NotoKufiArabicFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
@@ -45,7 +53,7 @@ val Typography =
       ),
     titleMedium =
       TextStyle(
-        fontFamily = NotoSansArabicFamily,
+        fontFamily = NotoKufiArabicFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp,

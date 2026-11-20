@@ -1855,5 +1855,88 @@ from memory alone). Flagged here rather than silently claimed as
 verified; needs a real on-device check next time Android tooling is
 available.
 
+### Step 3.10 — "Make the website more premium" (ui-ux-pro-max design-system refresh) + matching Android typography
+
+Directly requested, using the ui-ux-pro-max skill as instructed: ran
+`--design-system "government water infrastructure dashboard premium
+trustworthy"` (dials: variance 5, motion 6, density 7). Its own color
+recommendation came back **identical** to the palette already in
+`index.css` (confirms step 3.1's original choice already matched a
+"premium government" brief) — so this pass is about everything the
+color-right palette wasn't carrying: typography hierarchy, elevation,
+iconography, and perceived-loading quality, per the skill's "Soft UI
+Evolution" style match and its Corporate Trust/Arabic-equivalent
+typography pairing.
+
+**Typography** — the skill's "Corporate Trust" pairing (Lexend/Source
+Sans 3, explicitly flagged "Best For: government") for French, matched
+to its Arabic equivalent (Noto Kufi Arabic/Noto Sans Arabic — a
+geometric display face over Arabic's own text face). New `--font-
+heading` token in `index.css` (swapped per-`dir` the same way `--font-
+sans` already was), applied to every page's `<h1>` (10 files, one sed
+pass over the identical shared class string) plus the app-name header/
+login title. `lib/statusLabels.ts` gained `scoringCriterionLabel()`,
+also applied to `ReportDetailPage`'s priority-breakdown table, which
+had been rendering the backend's raw English criterion key untranslated
+— a real, if small, pre-existing gap this pass's font/label work
+surfaced.
+
+**Elevation** — new `--shadow-soft`/`--shadow-soft-lg` tokens (tinted
+ambient shadow under a tighter neutral one; a dedicated, less-tinted
+glow variant for dark mode) replace flat `shadow-sm`/`shadow-md`
+everywhere via Tailwind v4's own `--shadow-*` → `shadow-*` utility
+generation (same mechanism as `--color-*` → `bg-*`/`text-*`, no new
+machinery needed). `Button`'s primary/destructive variants also gained
+a subtle top-to-bottom gradient fill instead of a flat color — same
+hue both stops, so contrast is unaffected.
+
+**Iconography** — `@phosphor-icons/react` added (the project had none
+before; every nav label, KPI card, and button was text-only). Every nav
+item now carries a matching icon (outline, fills solid on the active
+tab); the dashboard's 3 KPI cards gained a colored circular icon badge
+each; the app name gained a droplet mark (login page and header); the
+language switcher a globe; logout a sign-out icon.
+
+**Perceived loading performance** — every page's plain "جارٍ
+التحميل…" line replaced with a shaped skeleton matching that page's
+real layout (new `Skeleton`/`TableSkeleton`/`DetailPageSkeleton`
+components, plus bespoke ones for the dashboard, scoring, map and
+project board, whose shapes don't fit the generic ones) — reserves the
+right space (no layout shift once data arrives) and reads as
+considerably more finished than inert text, the single highest-leverage
+"premium" lever from the skill's own priority table (UX guidance:
+perceived performance). Every list's own empty state also moved from a
+bare `<p>` to a new shared `EmptyState` component (muted icon badge +
+message) — reports, users, audit, territories, map, and the dashboard's
+two douar lists; left as plain text only in small nested contexts
+(a kanban column, "no media yet" inside a detail section) where the
+bigger treatment would read as disproportionate.
+
+No backend changes this pass. 55 Vitest tests still pass unchanged (no
+new ones added — this was a pure presentation-layer pass over existing,
+already-tested pages); tsc/oxlint/build all clean. Bundle grew to
+~1.70 MB (gzip ~480 KB) with the icon library added — the code-
+splitting item flagged since step 3.7 keeps compounding, still not
+blocking for this prototype. Verified live in the browser as both
+admin and manager, in Arabic and French, at both the default desktop
+width and after resizing the window down.
+
+**Android**: given no centralized `Card`/`Button` wrapper exists there
+(every screen calls Material3's own components directly — unlike web's
+`components/Button.tsx`/`Card.tsx`), a parallel shadow/gradient pass
+would mean touching many files blind, with no SDK in this session to
+compile-check any of them (same constraint as step 3.9). Scoped instead
+to the one change with real parallel value and low mechanical risk:
+bundled Noto Kufi Arabic (`res/font/noto_kufi_arabic.ttf`, downloaded
+from the same `google/fonts` source the project's other bundled font
+came from — upstream only ships it as a single variable-weight file, no
+static Bold instance, so `theme/Type.kt`'s `titleLarge`/`titleMedium`
+use it at one weight and let Compose's standard faux-bold synthesis
+handle the Bold request, same fallback that already applies to any
+font lacking a dedicated bold cut) for `titleLarge`/`titleMedium` only
+— not `labelLarge`, which M3 also uses for button text, where a display
+face would read as misapplied rather than premium. **Not verified on-
+device**, same unresolved tooling gap as step 3.9's theme rework.
+
 Not yet built: Phase 4 (AI assistance — anomaly detection, recurring-
 problem detection, AI-drafted monthly summaries) — not started at all.
