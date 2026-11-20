@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
+import { EmptyState } from '../../components/EmptyState'
 import { selectClass } from '../../components/formStyles'
+import { TableSkeleton } from '../../components/TableSkeleton'
 import { StatusBadge } from '../../components/StatusBadge'
 import { TableContainer } from '../../components/TableContainer'
 import { useDouarsLookup } from '../douars/douarsApi'
@@ -47,7 +49,7 @@ export function ReportsListPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('reports.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('reports.title')}</h1>
 
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm text-foreground">
@@ -77,7 +79,7 @@ export function ReportsListPage() {
       </div>
 
       {isPending ? (
-        <p className="text-foreground">{t('common.loading')}</p>
+        <TableSkeleton />
       ) : isError ? (
         <div className="flex flex-col items-start gap-2">
           <p className="text-destructive">
@@ -88,7 +90,7 @@ export function ReportsListPage() {
           </Button>
         </div>
       ) : data.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('reports.empty')}</p>
+        <EmptyState message={t('reports.empty')} />
       ) : (
         <div style={{ opacity: isPlaceholderData ? 0.6 : 1 }} className="transition-opacity">
           {/* Below `sm`, a 5-column table has no honest way to fit a

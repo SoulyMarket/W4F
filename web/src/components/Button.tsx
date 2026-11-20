@@ -5,13 +5,17 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 
 export type ButtonSize = 'sm' | 'md'
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  // A subtle top-to-bottom gradient instead of a flat fill, plus a
+  // resting shadow that lifts further on hover — the premium-SaaS
+  // "tactile" primary button treatment from the ui-ux-pro-max pass, kept
+  // mild enough to stay WCAG-safe (both stops are the same primary hue).
   primary:
-    'bg-primary text-on-primary hover:opacity-90 focus-visible:ring-ring disabled:opacity-60',
+    'bg-gradient-to-b from-primary to-primary/90 text-on-primary shadow-soft hover:to-primary hover:shadow-soft-lg focus-visible:ring-ring disabled:opacity-60 disabled:shadow-none',
   secondary:
     'border border-border bg-background text-foreground hover:bg-muted focus-visible:ring-ring disabled:opacity-60',
   ghost: 'text-foreground hover:bg-muted focus-visible:ring-ring disabled:opacity-50',
   destructive:
-    'bg-destructive text-white hover:opacity-90 focus-visible:ring-destructive disabled:opacity-60',
+    'bg-gradient-to-b from-destructive to-destructive/90 text-white shadow-soft hover:to-destructive hover:shadow-soft-lg focus-visible:ring-destructive disabled:opacity-60 disabled:shadow-none',
   'destructive-ghost': 'text-destructive hover:bg-destructive/10 focus-visible:ring-destructive disabled:opacity-50',
 }
 
@@ -49,7 +53,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={!isDisabled && !prefersReducedMotion ? { scale: 1.02 } : undefined}
         whileTap={!isDisabled && !prefersReducedMotion ? { scale: 0.96 } : undefined}
         transition={{ duration: 0.15, ease: 'easeOut' }}
-        className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+        className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold transition-[color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
         {...props}
       >
         {isLoading && (

@@ -1,10 +1,13 @@
+import { ClockCounterClockwiseIcon } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
+import { EmptyState } from '../../components/EmptyState'
 import { inputClass, selectClass } from '../../components/formStyles'
 import { TableContainer } from '../../components/TableContainer'
+import { TableSkeleton } from '../../components/TableSkeleton'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { AUDIT_ACTIONS, auditActionLabel } from '../../lib/statusLabels'
@@ -28,7 +31,7 @@ export function AuditLogPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('admin.audit_title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('admin.audit_title')}</h1>
 
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm text-foreground">
@@ -65,7 +68,7 @@ export function AuditLogPage() {
       </div>
 
       {isPending ? (
-        <p className="text-foreground">{t('common.loading')}</p>
+        <TableSkeleton />
       ) : isError ? (
         <div className="flex flex-col items-start gap-2">
           <p className="text-destructive">
@@ -76,7 +79,7 @@ export function AuditLogPage() {
           </Button>
         </div>
       ) : data.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('admin.audit_empty')}</p>
+        <EmptyState icon={ClockCounterClockwiseIcon} message={t('admin.audit_empty')} />
       ) : (
         <div style={{ opacity: isPlaceholderData ? 0.6 : 1 }} className="transition-opacity">
           <div className="flex flex-col gap-2 sm:hidden">

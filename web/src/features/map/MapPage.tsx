@@ -3,11 +3,14 @@
 // before use, same "verify an unfamiliar library's actual API" pass as
 // framer-motion in step 3.7). `MapLibreMap` is the package's own alias
 // for `Map`, used here instead to avoid shadowing the built-in `Map`.
+import { MapTrifoldIcon } from '@phosphor-icons/react'
 import { LngLatBounds, MapLibreMap, Marker, NavigationControl, Popup } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
+import { EmptyState } from '../../components/EmptyState'
+import { Skeleton } from '../../components/Skeleton'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import {
@@ -27,7 +30,14 @@ export function MapPage() {
   const lang = i18n.language as SupportedLanguage
   const { data, isPending, isError, error, refetch } = useDashboardMap()
 
-  if (isPending) return <p className="text-foreground">{t('common.loading')}</p>
+  if (isPending) {
+    return (
+      <div className="flex flex-col gap-4" aria-hidden="true">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-[60vh] min-h-[320px] w-full" />
+      </div>
+    )
+  }
 
   if (isError) {
     return (
@@ -42,12 +52,12 @@ export function MapPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('map.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('map.title')}</h1>
       {data.features.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('map.empty')}</p>
+        <EmptyState icon={MapTrifoldIcon} message={t('map.empty')} />
       ) : (
         <>
-          <div className="h-[60vh] min-h-[320px] overflow-hidden rounded-xl border border-border shadow-sm">
+          <div className="h-[60vh] min-h-[320px] overflow-hidden rounded-xl border border-border/70 shadow-soft">
             <MapLibreView features={data.features} lang={lang} />
           </div>
           <MapLegend />

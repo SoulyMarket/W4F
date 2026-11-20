@@ -27,9 +27,11 @@ export function Card({ children, className = '', index = 0, interactive = false,
       initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: prefersReducedMotion ? 0 : index * 0.06, ease: 'easeOut' }}
-      whileHover={interactive && !prefersReducedMotion ? { y: -2 } : undefined}
-      className={`rounded-xl border border-border bg-white/60 p-4 shadow-sm transition-shadow dark:bg-white/5 ${
-        interactive ? 'cursor-pointer text-start hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring' : ''
+      whileHover={interactive && !prefersReducedMotion ? { y: -3 } : undefined}
+      className={`rounded-xl border border-border/70 bg-white/60 p-4 shadow-soft backdrop-blur-sm transition-shadow dark:bg-white/5 ${
+        interactive
+          ? 'cursor-pointer text-start hover:shadow-soft-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          : ''
       } ${className}`}
     >
       {children}

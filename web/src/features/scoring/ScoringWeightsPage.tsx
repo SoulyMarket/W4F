@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
+import { Skeleton } from '../../components/Skeleton'
 import { ApiError } from '../../lib/api'
 import { scoringCriterionLabel } from '../../lib/statusLabels'
 import { SCORING_CRITERIA, useScoringConfig, useUpdateScoringConfig, type ScoringConfigDto } from './scoringApi'
@@ -30,7 +31,7 @@ export function ScoringWeightsPage() {
   }
 
   if (isPending || weights === null) {
-    return <p className="text-foreground">{t('common.loading')}</p>
+    return <ScoringWeightsSkeleton />
   }
 
   if (isError) {
@@ -58,7 +59,7 @@ export function ScoringWeightsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('scoring.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('scoring.title')}</h1>
       <p className="text-sm text-muted-foreground">{t('scoring.hint')}</p>
 
       {mutation.isError && (
@@ -120,6 +121,29 @@ export function ScoringWeightsPage() {
           </Button>
         )}
       </div>
+    </div>
+  )
+}
+
+function ScoringWeightsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4" aria-hidden="true">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-4 w-80" />
+      <Card className="max-w-xl">
+        <div className="flex flex-col gap-4">
+          {Array.from({ length: SCORING_CRITERIA.length }, (_, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-8" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Skeleton className="h-10 w-40" />
     </div>
   )
 }

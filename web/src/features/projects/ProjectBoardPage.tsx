@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button'
+import { Skeleton } from '../../components/Skeleton'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { PROJECT_STATUSES, projectStatusLabel } from '../../lib/statusLabels'
@@ -20,7 +21,25 @@ export function ProjectBoardPage() {
   const { data, isPending, isError, error, refetch } = useProjectsList()
   const douars = useDouarsLookup()
 
-  if (isPending) return <p className="text-foreground">{t('common.loading')}</p>
+  if (isPending) {
+    return (
+      <div className="flex flex-col gap-4" aria-hidden="true">
+        <Skeleton className="h-8 w-40" />
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {PROJECT_STATUSES.map((status) => (
+            <div
+              key={status}
+              className="flex w-64 shrink-0 flex-col gap-2 rounded-xl border border-border bg-white/40 p-3 dark:bg-white/5"
+            >
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   if (isError) {
     return (
@@ -44,7 +63,7 @@ export function ProjectBoardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('projects.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('projects.title')}</h1>
 
       <div className="flex gap-4 overflow-x-auto pb-2">
         {PROJECT_STATUSES.map((status, columnIndex) => {
@@ -73,7 +92,7 @@ export function ProjectBoardPage() {
                       onClick={() => navigate(`/projects/${project.id}`)}
                       whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.01 }}
                       whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
-                      className="cursor-pointer rounded-lg border border-border bg-white/70 p-3 text-start shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring dark:bg-white/10"
+                      className="cursor-pointer rounded-lg border border-border/70 bg-white/70 p-3 text-start shadow-soft transition-shadow hover:shadow-soft-lg focus:outline-none focus:ring-2 focus:ring-ring dark:bg-white/10"
                     >
                       <p className="break-words text-sm font-medium text-foreground">{project.title}</p>
                       <p className="truncate text-xs text-muted-foreground">{douarName}</p>

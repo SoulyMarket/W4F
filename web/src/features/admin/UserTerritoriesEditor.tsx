@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
+import { Skeleton } from '../../components/Skeleton'
 import { ApiError } from '../../lib/api'
 import { useSetUserTerritories, useTerritoriesList } from './territoriesApi'
 import type { UserDto } from './usersApi'
@@ -44,7 +45,11 @@ export function UserTerritoriesEditor({ user, onDone }: { user: UserDto; onDone:
       )}
 
       {isPending ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        <div className="flex flex-col gap-2" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-6 w-full" />
+          ))}
+        </div>
       ) : (territories ?? []).length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('user_territories.none_assigned')}</p>
       ) : (

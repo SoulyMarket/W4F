@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
+import { DetailPageSkeleton } from '../../components/DetailPageSkeleton'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
 import { useDouarsLookup } from '../douars/douarsApi'
@@ -31,7 +32,7 @@ export function ReportDetailPage() {
   const douars = useDouarsLookup()
   const linkedProject = useProjectForReport(reportId ?? '', report?.status === 'converted_to_project')
 
-  if (isPending) return <p className="text-foreground">{t('common.loading')}</p>
+  if (isPending) return <DetailPageSkeleton />
 
   if (isError) {
     return (
@@ -57,7 +58,7 @@ export function ReportDetailPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 break-words">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('reports.detail_title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('reports.detail_title')}</h1>
           <p className="text-sm text-muted-foreground">{douarName}</p>
         </div>
         <StatusBadge status={report.status} label={reportStatusLabel(t, report.status)} kind="report" />

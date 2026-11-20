@@ -1,7 +1,10 @@
+import { BuildingsIcon, TrendUpIcon, WarningCircleIcon, type Icon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
 import { StatusBarChart, type StatusBarChartEntry } from '../../components/charts/StatusBarChart'
+import { EmptyState } from '../../components/EmptyState'
+import { Skeleton } from '../../components/Skeleton'
 import type { SupportedLanguage } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { projectStatusLabel, reportStatusLabel } from '../../lib/statusLabels'
@@ -22,7 +25,7 @@ export function DashboardPage() {
   const { data, isPending, isError, error, refetch } = useDashboardSummary()
 
   if (isPending) {
-    return <p className="text-foreground">{t('common.loading')}</p>
+    return <DashboardSkeleton />
   }
 
   if (isError) {
@@ -55,12 +58,24 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('dashboard.title')}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('dashboard.title')}</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard index={0} label={t('dashboard.total_douars')} value={data.total_douars} />
-        <KpiCard index={1} label={t('dashboard.priority_douars')} value={data.priority_douars.length} />
-        <KpiCard index={2} label={t('dashboard.recurring_problem_douars')} value={data.recurring_problem_douars.length} />
+        <KpiCard index={0} icon={BuildingsIcon} label={t('dashboard.total_douars')} value={data.total_douars} />
+        <KpiCard
+          index={1}
+          icon={WarningCircleIcon}
+          tone="destructive"
+          label={t('dashboard.priority_douars')}
+          value={data.priority_douars.length}
+        />
+        <KpiCard
+          index={2}
+          icon={TrendUpIcon}
+          tone="accent"
+          label={t('dashboard.recurring_problem_douars')}
+          value={data.recurring_problem_douars.length}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -98,11 +113,85 @@ export function DashboardPage() {
   )
 }
 
-function KpiCard({ index, label, value }: { index: number; label: string; value: number }) {
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6" aria-hidden="true">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <Card key={i} index={i}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+              <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+            </div>
+          </Card>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {[3, 4].map((i) => (
+          <Card key={i} index={i}>
+            <Skeleton className="mb-4 h-4 w-40" />
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2].map((row) => (
+                <div key={row} className="flex items-center gap-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 flex-1 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {[5, 6].map((i) => (
+          <Card key={i} index={i}>
+            <Skeleton className="mb-1 h-4 w-40" />
+            <Skeleton className="mb-4 h-3 w-56" />
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2].map((row) => (
+                <Skeleton key={row} className="h-5 w-full" />
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const KPI_TONE_CLASSES = {
+  primary: 'bg-primary/10 text-primary',
+  destructive: 'bg-destructive/10 text-destructive',
+  accent: 'bg-accent/10 text-accent',
+} as const
+
+function KpiCard({
+  index,
+  icon: IconComponent,
+  tone = 'primary',
+  label,
+  value,
+}: {
+  index: number
+  icon: Icon
+  tone?: keyof typeof KPI_TONE_CLASSES
+  label: string
+  value: number
+}) {
   return (
     <Card index={index}>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-1 font-heading text-3xl font-semibold text-foreground">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${KPI_TONE_CLASSES[tone]}`}>
+          <IconComponent size={20} weight="bold" aria-hidden="true" />
+        </span>
+      </div>
     </Card>
   )
 }
@@ -140,7 +229,7 @@ function DouarListCard({
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p className="mb-3 text-xs text-muted-foreground">{hint}</p>
       {douars.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        <EmptyState message={emptyMessage} />
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {douars.map((douar) => (

@@ -1,3 +1,4 @@
+import { GlobeIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { setLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
 
@@ -11,7 +12,8 @@ export function LanguageSwitcher() {
   const current = i18n.language as SupportedLanguage
 
   return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+    <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <GlobeIcon size={16} className="shrink-0" aria-hidden="true" />
       <span className="sr-only">{t('common.language')}</span>
       <select
         value={current}

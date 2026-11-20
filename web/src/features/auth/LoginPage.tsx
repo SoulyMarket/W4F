@@ -1,3 +1,4 @@
+import { DropIcon } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -42,9 +43,12 @@ export function LoginPage() {
           initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="w-full max-w-sm rounded-xl border border-border bg-white/60 p-8 shadow-md dark:bg-white/5"
+          className="w-full max-w-sm rounded-xl border border-border/70 bg-white/60 p-8 shadow-soft-lg backdrop-blur-sm dark:bg-white/5"
         >
-          <h1 className="mb-1 text-xl font-semibold text-foreground">{t('app.name')}</h1>
+          <div className="mb-1 flex items-center gap-2">
+            <DropIcon size={28} weight="fill" className="shrink-0 text-primary" aria-hidden="true" />
+            <h1 className="font-heading text-xl font-semibold text-foreground">{t('app.name')}</h1>
+          </div>
           <h2 className="mb-6 text-sm text-muted-foreground">{t('login.title')}</h2>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

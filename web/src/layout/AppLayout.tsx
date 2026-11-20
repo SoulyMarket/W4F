@@ -1,3 +1,4 @@
+import { DropIcon, SignOutIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/Button'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
@@ -18,7 +19,10 @@ export function AppLayout() {
           row below instead, and `min-w-0 truncate` keeps the title from
           ever doing that two-line wrap itself. */}
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-white/60 px-4 py-3 backdrop-blur-sm dark:bg-white/5">
-        <span className="min-w-0 truncate text-base font-semibold text-foreground">{t('app.name')}</span>
+        <span className="flex min-w-0 items-center gap-2 truncate font-heading text-base font-semibold text-foreground">
+          <DropIcon size={22} weight="fill" className="shrink-0 text-primary" aria-hidden="true" />
+          {t('app.name')}
+        </span>
         <div className="flex shrink-0 items-center gap-4">
           <LanguageSwitcher />
           {user && (
@@ -27,6 +31,7 @@ export function AppLayout() {
             </span>
           )}
           <Button variant="secondary" size="sm" onClick={() => void logout()}>
+            <SignOutIcon size={16} aria-hidden="true" />
             {t('common.logout')}
           </Button>
         </div>

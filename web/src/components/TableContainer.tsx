@@ -19,7 +19,7 @@ interface TableContainerProps {
 export function TableContainer({ children, opacity = 1 }: TableContainerProps) {
   return (
     <div
-      className="overflow-hidden rounded-xl border border-border bg-white/60 shadow-sm transition-opacity dark:bg-white/5"
+      className="overflow-hidden rounded-xl border border-border/70 bg-white/60 shadow-soft backdrop-blur-sm transition-opacity dark:bg-white/5"
       style={{ opacity }}
     >
       <div className="overflow-x-auto">

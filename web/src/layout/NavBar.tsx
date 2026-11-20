@@ -1,3 +1,14 @@
+import {
+  ClipboardTextIcon,
+  ClockCounterClockwiseIcon,
+  GaugeIcon,
+  KanbanIcon,
+  MapPinIcon,
+  MapTrifoldIcon,
+  SlidersHorizontalIcon,
+  UsersIcon,
+  type Icon,
+} from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
@@ -20,35 +31,35 @@ export function NavBar() {
     // the next line, never broken partway through.
     <nav className="flex flex-wrap items-center gap-1 border-b border-border bg-white/40 px-4 py-2 dark:bg-white/5">
       {user.role === 'manager' && (
-        <NavItem to="/" end label={t('dashboard.title')} />
+        <NavItem to="/" end icon={GaugeIcon} label={t('dashboard.title')} />
       )}
-      <NavItem to="/reports" label={t('reports.title')} />
+      <NavItem to="/reports" icon={ClipboardTextIcon} label={t('reports.title')} />
       {(user.role === 'manager' || user.role === 'admin') && (
-        <NavItem to="/projects" label={t('projects.title')} />
+        <NavItem to="/projects" icon={KanbanIcon} label={t('projects.title')} />
       )}
       {user.role === 'manager' && (
         <>
-          <NavItem to="/map" label={t('map.title')} />
-          <NavItem to="/scoring" label={t('scoring.title')} />
+          <NavItem to="/map" icon={MapTrifoldIcon} label={t('map.title')} />
+          <NavItem to="/scoring" icon={SlidersHorizontalIcon} label={t('scoring.title')} />
         </>
       )}
       {user.role === 'admin' && (
         <>
-          <NavItem to="/admin/users" label={t('admin.users_title')} />
-          <NavItem to="/admin/audit" label={t('admin.audit_title')} />
-          <NavItem to="/admin/territories" label={t('territories.title')} />
+          <NavItem to="/admin/users" icon={UsersIcon} label={t('admin.users_title')} />
+          <NavItem to="/admin/audit" icon={ClockCounterClockwiseIcon} label={t('admin.audit_title')} />
+          <NavItem to="/admin/territories" icon={MapPinIcon} label={t('territories.title')} />
         </>
       )}
     </nav>
   )
 }
 
-function NavItem({ to, label, end }: { to: string; label: string; end?: boolean }) {
+function NavItem({ to, label, end, icon: IconComponent }: { to: string; label: string; end?: boolean; icon: Icon }) {
   return (
     <NavLink
       to={to}
       end={end}
-      className="relative whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+      className="relative flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
     >
       {({ isActive }) => (
         <>
@@ -60,10 +71,15 @@ function NavItem({ to, label, end }: { to: string; label: string; end?: boolean 
           {isActive && (
             <motion.span
               layoutId="nav-active-pill"
-              className="absolute inset-0 rounded-md bg-primary"
+              className="absolute inset-0 rounded-md bg-gradient-to-b from-primary to-primary/90 shadow-soft"
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             />
           )}
+          <IconComponent
+            size={16}
+            weight={isActive ? 'fill' : 'regular'}
+            className={`relative z-10 shrink-0 transition-colors ${isActive ? 'text-on-primary' : 'text-muted-foreground'}`}
+          />
           <span
             className={`relative z-10 transition-colors ${
               isActive ? 'text-on-primary' : 'text-foreground hover:text-primary'

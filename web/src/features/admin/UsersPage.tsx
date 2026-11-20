@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
 import { TableContainer } from '../../components/TableContainer'
+import { TableSkeleton } from '../../components/TableSkeleton'
 import { ApiError } from '../../lib/api'
 import { formatDate } from '../../lib/formatDate'
 import { CreateUserForm } from './CreateUserForm'
@@ -42,7 +43,7 @@ export function UsersPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('admin.users_title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">{t('admin.users_title')}</h1>
         {!showCreateForm && (
           <Button size="sm" onClick={() => setShowCreateForm(true)}>
             {t('admin.new_user_button')}
@@ -82,7 +83,7 @@ export function UsersPage() {
       </AnimatePresence>
 
       {isPending ? (
-        <p className="text-foreground">{t('common.loading')}</p>
+        <TableSkeleton />
       ) : isError ? (
         <div className="flex flex-col items-start gap-2">
           <p className="text-destructive">
